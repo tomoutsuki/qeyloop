@@ -1,0 +1,19 @@
+{
+  "name": "qeyloop",
+  "version": "1.0.0",
+  "description": "Minimalist low-latency web-based launchpad application",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:wasm && vite build",
+    "build:wasm": "cd src/wasm && wasm-pack build --target web --out-dir ../../public/wasm",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  }
+}

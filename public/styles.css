@@ -1,0 +1,536 @@
+/**
+ * Qeyloop Styles
+ * 
+ * Minimal, functional, no animations.
+ * Optimized for responsiveness over aesthetics.
+ */
+
+/* ============================================================================
+   RESET & BASE
+   ============================================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ============================================================================
+   START SCREEN
+   ============================================================================ */
+
+.start-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;
+  z-index: 1000;
+}
+
+.start-content {
+  text-align: center;
+}
+
+.start-content h1 {
+  font-size: 48px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+
+.start-content > p {
+  font-size: 18px;
+  color: #888;
+  margin-bottom: 32px;
+}
+
+.start-button {
+  font-size: 24px;
+  padding: 16px 48px;
+  background: #2a2a2a;
+  color: #fff;
+  border: 2px solid #444;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.start-button:hover {
+  background: #333;
+  border-color: #555;
+}
+
+.start-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.start-info {
+  margin-top: 32px;
+  color: #666;
+}
+
+.start-info .hint {
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* ============================================================================
+   MAIN APP LAYOUT
+   ============================================================================ */
+
+.main-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 8px 16px;
+  background: #222;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  padding: 16px;
+  gap: 16px;
+}
+
+.footer {
+  padding: 8px 16px;
+  background: #222;
+  border-top: 1px solid #333;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   PAD GRID
+   ============================================================================ */
+
+.pad-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pad-row {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.pad {
+  flex: 1;
+  min-width: 0;
+  min-height: 60px;
+  background: #2a2a2a;
+  border: 2px solid #3a3a3a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.pad:hover {
+  background: #333;
+  border-color: #444;
+}
+
+.pad.active {
+  background: #4a4a4a;
+  border-color: #666;
+}
+
+.pad.selected {
+  border-color: #0088ff;
+}
+
+.pad.dragover {
+  background: #333;
+  border-color: #0088ff;
+  border-style: dashed;
+}
+
+.pad.has-sound {
+  background: #2a3a2a;
+  border-color: #3a4a3a;
+}
+
+.pad.has-sound:hover {
+  background: #334433;
+  border-color: #445544;
+}
+
+.pad.has-sound.active {
+  background: #4a5a4a;
+  border-color: #5a6a5a;
+}
+
+.pad.loop-mode {
+  background: #2a2a3a;
+  border-color: #3a3a4a;
+}
+
+.pad.loop-mode.has-sound {
+  background: #2a3a4a;
+  border-color: #3a4a5a;
+}
+
+.pad-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #888;
+}
+
+.pad.has-sound .pad-label {
+  color: #aaa;
+}
+
+.pad-sound {
+  font-size: 10px;
+  color: #666;
+  margin-top: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.pad.has-sound .pad-sound {
+  color: #888;
+}
+
+.pad-mode {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.pad.has-sound .pad-mode {
+  color: #888;
+}
+
+.pad.modulated .pad-mode {
+  color: #ff8800;
+}
+
+/* ============================================================================
+   CONTROL PANEL
+   ============================================================================ */
+
+.control-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: #222;
+  border: 1px solid #333;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control-section {
+  border-bottom: 1px solid #333;
+  padding-bottom: 16px;
+}
+
+.control-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.control-section h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.control-row:last-child {
+  margin-bottom: 0;
+}
+
+.control-row label {
+  font-size: 13px;
+  color: #aaa;
+  min-width: 50px;
+}
+
+/* ============================================================================
+   FORM ELEMENTS
+   ============================================================================ */
+
+input[type="number"],
+input[type="text"] {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 13px;
+  width: 60px;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: #0088ff;
+}
+
+.bpm-input {
+  width: 60px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.group-input {
+  width: 50px;
+  text-align: center;
+}
+
+select {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: #0088ff;
+}
+
+.slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #333;
+  border: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #888;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: #aaa;
+}
+
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #888;
+  border: none;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb:hover {
+  background: #aaa;
+}
+
+.value-label {
+  font-size: 12px;
+  color: #888;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+.btn {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: #333;
+  border-color: #555;
+}
+
+.btn:active {
+  background: #444;
+}
+
+.btn.active {
+  background: #3a4a3a;
+  border-color: #4a5a4a;
+}
+
+.btn.loop {
+  background: #2a3a4a;
+  border-color: #3a4a5a;
+}
+
+.btn-small {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #888;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-small:hover {
+  background: #333;
+  color: #fff;
+}
+
+.btn-danger {
+  border-color: #663333;
+  color: #ff6666;
+}
+
+.btn-danger:hover {
+  background: #332222;
+  border-color: #884444;
+}
+
+.btn-panic {
+  width: 100%;
+  background: #4a2a2a;
+  border: 2px solid #664444;
+  color: #ff8888;
+  font-weight: 600;
+  padding: 12px;
+  margin-top: auto;
+}
+
+.btn-panic:hover {
+  background: #5a3a3a;
+  border-color: #885555;
+}
+
+/* ============================================================================
+   SELECTED PAD INFO
+   ============================================================================ */
+
+.selected-key-label {
+  font-weight: 600;
+  color: #fff;
+  padding: 4px 8px;
+  background: #333;
+}
+
+/* ============================================================================
+   PROJECT CONTROLS
+   ============================================================================ */
+
+.project-controls {
+  flex-wrap: wrap;
+}
+
+.project-controls .btn {
+  flex: 1;
+  min-width: 70px;
+}
+
+/* ============================================================================
+   SCROLLBAR
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+  }
+  
+  .control-panel {
+    width: 100%;
+    max-height: 200px;
+  }
+  
+  .pad {
+    min-height: 50px;
+  }
+  
+  .pad-label {
+    font-size: 14px;
+  }
+  
+  .pad-sound {
+    font-size: 9px;
+  }
+}

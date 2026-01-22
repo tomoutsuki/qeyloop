@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Minimalist low-latency web-based launchpad">
+  <title>Qeyloop</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- Start screen (shown until user interaction for audio) -->
+  <div id="start-screen" class="start-screen">
+    <div class="start-content">
+      <h1>Qeyloop</h1>
+      <p>Web Launchpad</p>
+      <button id="start-button" class="start-button">Start</button>
+      <div class="start-info">
+        <p>Click to initialize audio engine</p>
+        <p class="hint">Drop audio files onto pads to load sounds</p>
+        <p class="hint">Right-click pad to toggle loop mode</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main application (hidden until initialized) -->
+  <div id="main-app" class="main-app" style="display: none;">
+    <header class="header">
+      <h1>Qeyloop</h1>
+    </header>
+    
+    <main class="content">
+      <!-- Pad Grid -->
+      <div id="pad-grid" class="pad-grid"></div>
+      
+      <!-- Control Panel -->
+      <aside id="control-panel" class="control-panel"></aside>
+    </main>
+    
+    <footer class="footer">
+      <span>ESC = Panic | Drag audio files to pads | Right-click = Toggle mode</span>
+    </footer>
+  </div>
+  
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
