@@ -194,9 +194,13 @@ export class PageManager {
     
     // Save all key mappings from mode manager
     const mappings = modeManager.getAllMappings();
+    let savedMappingsWithSounds = 0;
     for (const mapping of mappings) {
       page.keyMappings.set(mapping.keyCode, { ...mapping });
+      if (mapping.hasSound) savedMappingsWithSounds++;
     }
+    
+    console.log(`Saved page ${this.activePageIndex + 1}: ${savedMappingsWithSounds} keys with sounds, ${page.sounds.size} sound files`);
     
     // Save modulation preset
     page.modulationPreset = modeManager.getModulationPreset();
@@ -212,6 +216,9 @@ export class PageManager {
       }
     }
     
+    // NOTE: keySoundIndices are managed by grid and stored via setKeySoundIndex
+    // They persist in the PageState and don't need to be explicitly saved here
+    
     page.isDirty = true;
   }
   
@@ -222,18 +229,40 @@ export class PageManager {
     const page = this.pages[pageIndex];
     if (!page) return;
     
+    console.log(`Loading page ${pageIndex + 1} with ${page.sounds.size} sounds and ${Array.from(page.keyMappings.values()).filter(m => m.hasSound).length} mapped keys`);
+    
     // Reset mode manager to defaults first
     modeManager.initialize();
     
-    // Load sounds for this page
+    // === CRITICAL: Only load sounds that belong to this page ===
+    // Clear and reload sounds to prevent cross-page contamination
+    // Each page has its own sound slot range: page N uses slots [N*64, N*64+63]
+    const pageStart = page.index * 64;
+    const pageEnd = pageStart + 64;
+    
+    // Load sounds for this page only
     for (const [index, sound] of page.sounds) {
-      audioEngine.loadSoundFromSamples(index, sound.name, sound.samples);
+      // Verify sound index is in this page's range
+      if (index >= pageStart && index < pageEnd) {
+        audioEngine.loadSoundFromSamples(index, sound.name, sound.samples);
+      }
     }
     
-    // Apply key mappings
+    // === CRITICAL: Only apply mappings that have sounds ===
+    // Keys without sounds should remain at defaults (hasSound: false)
+    let appliedMappings = 0;
     for (const [keyCode, mapping] of page.keyMappings) {
-      modeManager.setMapping(mapping);
+      // Only apply mapping if it actually has a sound assigned
+      if (mapping.hasSound) {
+        // Verify the sound index is in this page's range
+        if (mapping.soundIndex >= pageStart && mapping.soundIndex < pageEnd) {
+          modeManager.setMapping(mapping);
+          appliedMappings++;
+        }
+      }
     }
+    
+    console.log(`Applied ${appliedMappings} key mappings to page ${pageIndex + 1}`);
     
     // Apply modulation preset
     modeManager.setModulationPreset(page.modulationPreset);
@@ -318,19 +347,31 @@ export class PageManager {
   }
   
   /**
-   * Handle pad trigger - check for page jump before sound plays
-   * @returns true if page was jumped (sound should still play on new page)
+   * Check if pad should trigger page jump
+   * @returns Target page index if jump configured, or -1 if no jump
    */
-  handlePadTrigger(keyCode: number): boolean {
+  checkPadJump(keyCode: number): number {
     const targetPage = this.getPadPageJump(keyCode);
     
     if (targetPage >= 0 && targetPage !== this.activePageIndex) {
-      // === PAGE JUMP: Switch page before sound triggers ===
-      this.switchToPage(targetPage);
-      return true;
+      return targetPage;
     }
     
-    return false;
+    return -1;
+  }
+  
+  /**
+   * Execute delayed page jump (called after sound triggers)
+   * @param targetPage The page to jump to
+   */
+  executePageJump(targetPage: number): void {
+    if (targetPage >= 0 && targetPage !== this.activePageIndex) {
+      // === PAGE JUMP: Switch page after sound has been triggered ===
+      // Delay to ensure sound starts playing on current page before switch
+      setTimeout(() => {
+        this.switchToPage(targetPage);
+      }, 150); // 150ms allows sound to start before page change
+    }
   }
   
   // ==========================================================================
@@ -474,6 +515,7 @@ export class PageManager {
     const page = this.getActivePage();
     if (page) {
       page.sounds.set(soundIndex, soundData);
+      console.log(`Stored sound ${soundData.name} (index ${soundIndex}) in page ${page.index + 1}`);
     }
   }
   
@@ -517,10 +559,25 @@ export class PageManager {
   
   /**
    * Increment next sound index for current page
+   * Ensures index stays within page's allocated range [pageIndex*64, pageIndex*64+63]
    */
   incrementNextSoundIndex(): number {
     const page = this.getActivePage();
     if (page) {
+      const pageStart = page.index * 64;
+      const pageEnd = pageStart + 64;
+      
+      // Ensure next index is within page range
+      if (page.nextSoundIndex < pageStart) {
+        page.nextSoundIndex = pageStart;
+      }
+      
+      // Check if we've exceeded the page's sound slot limit
+      if (page.nextSoundIndex >= pageEnd) {
+        console.warn(`Page ${page.index + 1} has reached maximum sound slots (64)`);
+        return pageEnd - 1; // Return last valid index
+      }
+      
       return page.nextSoundIndex++;
     }
     return 0;

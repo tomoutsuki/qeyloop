@@ -103,8 +103,20 @@ export class ProjectIO {
   
   /**
    * Import legacy single-page project (version 1)
+   * === REMAPS TO ACTIVE PAGE RANGE ===
    */
   private async importLegacyProject(zip: JSZip, state: ProjectState): Promise<void> {
+    // === CRITICAL: Get target page range ===
+    const activePage = pageManager.getActivePage();
+    const pageStart = activePage.index * 64;
+    const pageEnd = pageStart + 64;
+    
+    console.log(`Importing legacy project into page ${activePage.index + 1}, remapping sounds to range ${pageStart}-${pageEnd - 1}`);
+    
+    // Build mapping from old indices to new indices
+    const indexRemap = new Map<number, number>();
+    let nextIndex = pageStart;
+    
     // Load sounds
     const soundsFolder = zip.folder(this.soundsFolder);
     if (soundsFolder) {
@@ -128,11 +140,20 @@ export class ProjectIO {
           );
           
           if (originalName) {
-            const index = parseInt(originalName[0]);
-            audioEngine.loadSoundFromSamples(index, originalName[1], samples);
-            // Store in page manager
-            pageManager.storeSoundData(index, {
-              index,
+            const oldIndex = parseInt(originalName[0]);
+            
+            // === REMAP: Assign new index in target page range ===
+            if (nextIndex >= pageEnd) {
+              console.warn(`Page ${activePage.index + 1} sound limit reached, skipping sound`);
+              return;
+            }
+            const newIndex = nextIndex++;
+            indexRemap.set(oldIndex, newIndex);
+            
+            audioEngine.loadSoundFromSamples(newIndex, originalName[1], samples);
+            // Store in page manager with new index
+            pageManager.storeSoundData(newIndex, {
+              index: newIndex,
               name: originalName[1],
               samples,
               sampleRate: 48000,
@@ -147,7 +168,9 @@ export class ProjectIO {
       await Promise.all(soundPromises);
     }
     
-    // Apply state using legacy method
+    // Apply state using legacy method, with remapped indices
+    this.applyStateWithRemap(state, indexRemap);
+  }
     this.applyState(state);
   }
   
@@ -255,6 +278,41 @@ export class ProjectIO {
         });
         
         await Promise.all(soundPromises);
+      }
+    }
+  }
+  
+  /**
+   * Apply imported state with remapped sound indices
+   */
+  private applyStateWithRemap(state: ProjectState, indexRemap: Map<number, number>): void {
+    // Apply BPM and metronome
+    bpmController.importState({
+      bpm: state.bpm,
+      metronome: state.metronome,
+    });
+    
+    // Apply master volume
+    audioEngine.setMasterVolume(state.masterVolume);
+    
+    // Apply modulation preset
+    modeManager.setModulationPreset(state.modulationPreset);
+    
+    // Apply key mappings with remapped sound indices
+    const remappedMappings = state.keyMappings.map(mapping => {
+      const newSoundIndex = indexRemap.get(mapping.soundIndex) ?? mapping.soundIndex;
+      return {
+        ...mapping,
+        soundIndex: newSoundIndex,
+      };
+    });
+    
+    modeManager.importMappings(remappedMappings);
+    
+    // Update keySoundIndices in page manager
+    for (const mapping of remappedMappings) {
+      if (mapping.hasSound) {
+        pageManager.setKeySoundIndex(mapping.keyCode, mapping.soundIndex);
       }
     }
   }

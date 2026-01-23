@@ -299,12 +299,16 @@ export class PadGrid {
    * Refresh all pad displays
    */
   refreshAll(): void {
+    console.log('Grid: Refreshing all pads...');
+    let padsWithSounds = 0;
     for (const keyCode of this.padElements.keys()) {
       const mapping = modeManager.getMapping(keyCode);
       if (mapping) {
+        if (mapping.hasSound) padsWithSounds++;
         this.updatePadDisplay(keyCode, mapping);
       }
     }
+    console.log(`Grid: Refreshed ${this.padElements.size} pads, ${padsWithSounds} have sounds`);
   }
   
   /**

@@ -68,11 +68,16 @@ export class KeyboardHandler {
     this.heldKeys.add(keyCode);
     
     // === PAD-TRIGGERED PAGE JUMP ===
-    // Check if this pad should trigger a page jump before playing sound
-    pageManager.handlePadTrigger(keyCode);
+    // Check if this pad should trigger a page jump (but don't execute yet)
+    const targetPage = pageManager.checkPadJump(keyCode);
     
-    // Trigger note
+    // Trigger note FIRST (on current page)
     audioEngine.noteOn(keyCode);
+    
+    // Execute page jump AFTER sound triggers (if configured)
+    if (targetPage >= 0) {
+      pageManager.executePageJump(targetPage);
+    }
     
     // Notify UI
     this.onKeyStateChange?.(keyCode, true);
