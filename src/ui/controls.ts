@@ -472,6 +472,14 @@ export class ControlPanel {
       }
     });
     
+    // Prevent inputs from keeping focus
+    this.elements.bpmInput?.addEventListener('blur', () => {
+      document.body.focus();
+    });
+    this.elements.groupInput?.addEventListener('blur', () => {
+      document.body.focus();
+    });
+    
     // BPM callback
     bpmController.setBpmChangeCallback((bpm) => {
       this.updateBpmDisplay(bpm);
@@ -510,6 +518,15 @@ export class ControlPanel {
         modeManager.setKeyVolume(this.selectedKeyCode, value);
       }
     });
+    
+    // Prevent all sliders from stealing keyboard focus
+    const preventFocus = (e: MouseEvent) => {
+      e.preventDefault();
+      (e.target as HTMLElement).blur();
+    };
+    this.elements.volumeSlider?.addEventListener('mousedown', preventFocus);
+    this.elements.pitchSlider?.addEventListener('mousedown', preventFocus);
+    this.elements.masterVolume?.addEventListener('mousedown', preventFocus);
     
     // Pitch slider
     this.elements.pitchSlider?.addEventListener('input', (e) => {
@@ -558,7 +575,8 @@ export class ControlPanel {
       if (file && this.selectedKeyCode !== null) {
         try {
           const mapping = modeManager.getMapping(this.selectedKeyCode);
-          const soundIndex = mapping?.soundIndex ?? this.getNextSoundIndex();
+          // If key already has a sound, reuse its index; otherwise get next available
+          const soundIndex = mapping?.hasSound ? mapping.soundIndex : this.getNextSoundIndex();
           
           await audioEngine.loadSound(soundIndex, file);
           modeManager.assignSound(this.selectedKeyCode, soundIndex, file.name);

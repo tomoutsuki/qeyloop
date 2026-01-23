@@ -502,13 +502,29 @@ impl DspEngine {
                 
                 if pos_floor >= sound.length {
                     if voice.mode == PlaybackMode::Loop {
-                        // BPM-synced loop: calculate loop length based on BPM
-                        // For now, loop the entire sample
-                        voice.position = 0.0;
+                        // Loop back to start
+                        voice.position = voice.position - sound.length as f64;
                         continue;
                     } else {
                         // Single shot: deactivate when done
                         voice.active = false;
+                        continue;
+                    }
+                }
+                
+                // BPM-sync for loop mode: quantize to 1/8 beat
+                if voice.mode == PlaybackMode::Loop {
+                    let samples_per_beat = (self.sample_rate * 60.0 / self.bpm) as u64;
+                    let samples_per_eighth = samples_per_beat / 2; // 1/8 note
+                    let sound_duration = sound.length as f64 / voice.pitch as f64;
+                    
+                    // Calculate how many 1/8 notes this sound should occupy
+                    let eighth_notes = (sound_duration / samples_per_eighth as f64).round() as u64;
+                    let target_length = eighth_notes * samples_per_eighth;
+                    
+                    // If we're past the target length, loop back
+                    if target_length > 0 && voice.position >= target_length as f64 {
+                        voice.position = voice.position % target_length as f64;
                         continue;
                     }
                 }

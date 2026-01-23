@@ -297,10 +297,28 @@ class JsDspEngine {
         
         if (posFloor >= sound.length) {
           if (voice.mode === PlaybackMode.Loop) {
-            voice.position = 0;
+            // Loop back to start
+            voice.position = voice.position - sound.length;
             continue;
           } else {
             voice.active = false;
+            continue;
+          }
+        }
+        
+        // BPM-sync check for loop mode: quantize to 1/8 beat
+        if (voice.mode === PlaybackMode.Loop) {
+          const samplesPerBeat = Math.floor(this.sampleRate * 60 / this.bpm);
+          const samplesPerEighth = samplesPerBeat / 2; // 1/8 note
+          const soundDuration = sound.length / voice.pitch;
+          
+          // Calculate how many 1/8 notes this sound should occupy
+          const eighthNotes = Math.round(soundDuration / samplesPerEighth);
+          const targetLength = eighthNotes * samplesPerEighth;
+          
+          // If we're past the target length, loop back
+          if (voice.position >= targetLength && targetLength > 0) {
+            voice.position = voice.position % targetLength;
             continue;
           }
         }

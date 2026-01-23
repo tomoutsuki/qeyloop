@@ -59,6 +59,8 @@ Row 4: Z X C V B N M , . /
 - **Left Click on Pad**: Select pad for editing
 - **Right Click on Pad**: Toggle playback mode (Single/Loop)
 - **Drag & Drop**: Load audio file onto pad
+- **Ctrl+C**: Copy selected pad's sound
+- **Ctrl+V**: Paste copied sound to selected pad
 
 ### Control Panel
 

@@ -129,6 +129,25 @@ function setup(): void {
     if (event.key === 'Escape' && isInitialized) {
       audioEngine.panic();
     }
+    
+    // Copy pad (Ctrl+C or Cmd+C)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'c' && isInitialized) {
+      const selectedPad = padGrid?.getSelectedPad();
+      if (selectedPad !== null) {
+        (padGrid as any).copiedPadKeyCode = selectedPad;
+        event.preventDefault();
+      }
+    }
+    
+    // Paste pad (Ctrl+V or Cmd+V)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'v' && isInitialized) {
+      const selectedPad = padGrid?.getSelectedPad();
+      const copiedPad = (padGrid as any).copiedPadKeyCode;
+      if (selectedPad !== null && copiedPad !== null) {
+        padGrid?.copySoundToKey(copiedPad, selectedPad);
+        event.preventDefault();
+      }
+    }
   });
   
   // Prevent spacebar from scrolling

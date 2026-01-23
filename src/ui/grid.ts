@@ -30,8 +30,14 @@ export class PadGrid {
   /** Currently selected pad for editing */
   private selectedPad: number | null = null;
   
-  /** Next sound index to use */
+  /** Map of keyCode to assigned sound index */
+  private keySoundIndices: Map<number, number> = new Map();
+  
+  /** Next available sound slot (globally) */
   private nextSoundIndex = 0;
+  
+  /** Copied pad keyCode for copy/paste functionality */
+  private copiedPadKeyCode: number | null = null;
   
   /** Callback for pad selection */
   private onPadSelect: ((keyCode: number) => void) | null = null;
@@ -207,8 +213,16 @@ export class PadGrid {
     }
     
     try {
-      // Load sound into next available slot
-      const soundIndex = this.nextSoundIndex++;
+      // Check if this key already has a sound index assigned
+      let soundIndex = this.keySoundIndices.get(keyCode);
+      
+      if (soundIndex === undefined) {
+        // Allocate new sound slot for this key
+        soundIndex = this.nextSoundIndex++;
+        this.keySoundIndices.set(keyCode, soundIndex);
+      }
+      
+      // Load sound into the key's dedicated slot
       await audioEngine.loadSound(soundIndex, file);
       
       // Assign to key
@@ -263,10 +277,22 @@ export class PadGrid {
   }
   
   /**
-   * Get currently selected pad
+   * Get next available sound slot
    */
-  getSelectedPad(): number | null {
-    return this.selectedPad;
+  getNextSoundIndex(): number {
+    return this.nextSoundIndex;
+  }
+  
+  /**
+   * Copy sound from one key to another
+   */
+  copySoundToKey(fromKeyCode: number, toKeyCode: number): void {
+    const fromMapping = modeManager.getMapping(fromKeyCode);
+    if (!fromMapping?.hasSound) return;
+    
+    // Assign the same sound index to the target key
+    this.keySoundIndices.set(toKeyCode, fromMapping.soundIndex);
+    modeManager.assignSound(toKeyCode, fromMapping.soundIndex, fromMapping.soundName);
   }
   
   /**
@@ -279,5 +305,12 @@ export class PadGrid {
         this.updatePadDisplay(keyCode, mapping);
       }
     }
+  }
+  
+  /**
+   * Get currently selected pad
+   */
+  getSelectedPad(): number | null {
+    return this.selectedPad;
   }
 }
