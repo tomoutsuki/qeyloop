@@ -169,10 +169,7 @@ export class PageManager {
     // === PAGE SWITCH: Save current page state ===
     this.saveCurrentPageState();
     
-    // === PAGE SWITCH: Stop all sounds from previous page ===
-    audioEngine.panic();
-    
-    // === PAGE SWITCH: Activate new page ===
+    // === PAGE SWITCH: Activate new page (sounds continue playing) ===
     this.activePageIndex = pageIndex;
     
     // === PAGE SWITCH: Load new page state ===
@@ -188,7 +185,7 @@ export class PageManager {
   /**
    * Save current ModeManager state to the active page
    */
-  private saveCurrentPageState(): void {
+  saveCurrentPageState(): void {
     const page = this.pages[this.activePageIndex];
     if (!page) return;
     
@@ -581,6 +578,58 @@ export class PageManager {
       return page.nextSoundIndex++;
     }
     return 0;
+  }
+  
+  /**
+   * Clear all data from active page
+   */
+  clearActivePage(): void {
+    const page = this.getActivePage();
+    if (!page) return;
+    
+    console.log(`Clearing page ${page.index + 1}`);
+    
+    // Clear sounds
+    page.sounds.clear();
+    
+    // Clear key mappings
+    page.keyMappings.clear();
+    
+    // Clear key-sound indices
+    page.keySoundIndices.clear();
+    
+    // Clear pad page jumps
+    page.padPageJumps.clear();
+    
+    // Reset next sound index to page start
+    page.nextSoundIndex = page.index * 64;
+    
+    // Reset mode manager to defaults
+    modeManager.initialize();
+  }
+  
+  /**
+   * Set a key mapping in the active page
+   */
+  setKeyMapping(keyCode: number, mapping: KeyMapping): void {
+    const page = this.getActivePage();
+    if (!page) return;
+    
+    page.keyMappings.set(keyCode, mapping);
+  }
+  
+  /**
+   * Reload the active page (used after import to refresh everything)
+   */
+  reloadActivePage(): void {
+    console.log(`Reloading active page ${this.activePageIndex + 1}`);
+    
+    // Load page state to apply all mappings
+    this.loadPageState(this.activePageIndex);
+    
+    // Notify UI to refresh
+    this.onPageChange?.(this.activePageIndex);
+    this.onPagesUpdate?.(this.pages, this.activePageIndex);
   }
 }
 

@@ -199,6 +199,8 @@ export class AudioEngine {
     
     this.loadedSounds.set(index, soundData);
     
+    console.log(`AudioEngine: Loaded sound ${name} at index ${index}, samples: ${samples.length}`);
+    
     this.postMessage({
       type: 'loadSound',
       data: { index, samples },
@@ -276,6 +278,8 @@ export class AudioEngine {
    * Trigger a note (key down)
    */
   noteOn(keyCode: number): void {
+    const sound = this.loadedSounds.get(keyCode);
+    console.log(`AudioEngine: noteOn(${keyCode}), loaded sounds count: ${this.loadedSounds.size}`);
     this.postMessage({ type: 'noteOn', data: { keyCode } });
   }
   
@@ -301,6 +305,8 @@ export class AudioEngine {
    * Set complete key mapping
    */
   setKeyMapping(mapping: KeyMapping): void {
+    console.log(`AudioEngine: Setting key ${mapping.keyCode} → sound ${mapping.soundIndex} (hasSound: ${mapping.hasSound})`);
+    
     this.postMessage({
       type: 'setKeyMapping',
       data: {

@@ -13,7 +13,7 @@
 // ============================================================================
 
 const MAX_VOICES = 64;
-const MAX_SOUNDS = 64;
+const MAX_SOUNDS = 640;  // 10 pages × 64 sounds per page
 const BLOCK_SIZE = 128;
 
 // Playback modes
@@ -91,7 +91,14 @@ class JsDspEngine {
   
   // Load audio samples into a sound slot
   load_sound(soundIndex, samples) {
-    if (soundIndex >= MAX_SOUNDS) return;
+    if (soundIndex >= MAX_SOUNDS) {
+      console.error(`Sound index ${soundIndex} exceeds MAX_SOUNDS (${MAX_SOUNDS})`);
+      return;
+    }
+    // Ensure array is large enough
+    if (!this.sounds[soundIndex]) {
+      this.sounds[soundIndex] = { samples: null, length: 0, loaded: false };
+    }
     this.sounds[soundIndex] = {
       samples: samples,
       length: samples.length,
@@ -109,7 +116,9 @@ class JsDspEngine {
     mapping.volume = Math.max(0, Math.min(1, volume));
     mapping.pitchSemitones = Math.max(-24, Math.min(24, pitchSemitones));
     mapping.modulationEnabled = modulationEnabled;
-    mapping.hasSound = soundIndex < MAX_SOUNDS && this.sounds[soundIndex].loaded;
+    mapping.hasSound = soundIndex < MAX_SOUNDS && 
+                       this.sounds[soundIndex] && 
+                       this.sounds[soundIndex].loaded;
   }
   
   set_key_mode(keyCode, mode) {

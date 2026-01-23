@@ -113,6 +113,10 @@ export class ProjectIO {
     
     console.log(`Importing legacy project into page ${activePage.index + 1}, remapping sounds to range ${pageStart}-${pageEnd - 1}`);
     
+    // === CLEAR EVERYTHING FIRST ===
+    audioEngine.panic();
+    pageManager.clearActivePage();
+    
     // Build mapping from old indices to new indices
     const indexRemap = new Map<number, number>();
     let nextIndex = pageStart;
@@ -170,8 +174,6 @@ export class ProjectIO {
     
     // Apply state using legacy method, with remapped indices
     this.applyStateWithRemap(state, indexRemap);
-  }
-    this.applyState(state);
   }
   
   /**
@@ -307,14 +309,23 @@ export class ProjectIO {
       };
     });
     
-    modeManager.importMappings(remappedMappings);
-    
-    // Update keySoundIndices in page manager
+    // === Apply mappings to active page (stores in page state) ===
     for (const mapping of remappedMappings) {
       if (mapping.hasSound) {
+        // Store key-sound association in page
         pageManager.setKeySoundIndex(mapping.keyCode, mapping.soundIndex);
+        // Store full mapping in page
+        pageManager.setKeyMapping(mapping.keyCode, mapping);
+        // Apply to mode manager and audio engine
+        modeManager.setMapping(mapping);
       }
     }
+    
+    // Save the imported state to the page
+    pageManager.saveCurrentPageState();
+    
+    // === Reload page to ensure everything is properly connected ===
+    pageManager.reloadActivePage();
   }
   
   /**
