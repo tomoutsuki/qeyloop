@@ -2,21 +2,25 @@
  * Qeyloop Project Import/Export
  * 
  * Handles saving and loading complete projects as ZIP files.
+ * Supports multi-page projects (version 2).
  * Includes:
- * - All sound files
+ * - All sound files (per page)
  * - Key mappings
  * - Mode settings
  * - BPM settings
+ * - Page configurations
  */
 
 import JSZip from 'jszip';
 import { audioEngine } from '../audio/engine';
 import { modeManager } from '../modes/manager';
 import { bpmController } from '../timing/bpm';
+import { pageManager, MultiPageProject, SerializablePageState } from '../pages/manager';
 import {
   ProjectState,
   KeyMapping,
   ModulationPreset,
+  SoundData,
   createDefaultProjectState,
 } from '../types';
 
@@ -36,24 +40,31 @@ export class ProjectIO {
   
   /**
    * Export current project to a downloadable ZIP file
+   * === MULTI-PAGE EXPORT ===
    */
   async exportProject(projectName: string = 'project'): Promise<void> {
     const zip = new JSZip();
     
-    // Collect project state
-    const state = this.collectState();
+    // Collect multi-page project state
+    const projectState = pageManager.exportProject();
     
     // Add manifest
-    zip.file(this.manifestName, JSON.stringify(state, null, 2));
+    zip.file(this.manifestName, JSON.stringify(projectState, null, 2));
     
-    // Add sound files
+    // Add sound files for all pages
     const soundsFolder = zip.folder(this.soundsFolder);
     if (soundsFolder) {
-      const sounds = audioEngine.getAllLoadedSounds();
-      for (const sound of sounds) {
-        // Convert Float32Array to WAV format
-        const wavData = this.float32ToWav(sound.samples, sound.sampleRate);
-        soundsFolder.file(sound.name.replace(/\.[^/.]+$/, '.wav'), wavData);
+      // Get all sounds from all pages
+      const allPages = pageManager.getAllPages();
+      for (const page of allPages) {
+        const pageFolder = soundsFolder.folder(`page_${page.index}`);
+        if (pageFolder) {
+          for (const [soundIndex, sound] of page.sounds) {
+            // Convert Float32Array to WAV format
+            const wavData = this.float32ToWav(sound.samples, sound.sampleRate);
+            pageFolder.file(`${soundIndex}_${sound.name.replace(/\.[^/.]+$/, '.wav')}`, wavData);
+          }
+        }
       }
     }
     
@@ -66,6 +77,7 @@ export class ProjectIO {
   
   /**
    * Import project from a ZIP file
+   * === MULTI-PAGE IMPORT ===
    */
   async importProject(file: File): Promise<void> {
     const zip = await JSZip.loadAsync(file);
@@ -77,23 +89,30 @@ export class ProjectIO {
     }
     
     const manifestText = await manifestFile.async('text');
-    const state: ProjectState = JSON.parse(manifestText);
+    const manifest = JSON.parse(manifestText);
     
-    // Validate version
-    if (state.version !== 1) {
-      throw new Error(`Unsupported project version: ${state.version}`);
+    // Check version and delegate to appropriate importer
+    if (manifest.version === 1) {
+      await this.importLegacyProject(zip, manifest as ProjectState);
+    } else if (manifest.version === 2) {
+      await this.importMultiPageProject(zip, manifest as MultiPageProject);
+    } else {
+      throw new Error(`Unsupported project version: ${manifest.version}`);
     }
-    
+  }
+  
+  /**
+   * Import legacy single-page project (version 1)
+   */
+  private async importLegacyProject(zip: JSZip, state: ProjectState): Promise<void> {
     // Load sounds
     const soundsFolder = zip.folder(this.soundsFolder);
     if (soundsFolder) {
-      // Build map of sound file names to indices
       const soundNameToIndex: Map<string, number> = new Map();
       for (const [index, name] of Object.entries(state.soundFiles)) {
         soundNameToIndex.set(name, parseInt(index));
       }
       
-      // Load each sound file
       const soundPromises: Promise<void>[] = [];
       
       soundsFolder.forEach((relativePath, file) => {
@@ -103,7 +122,6 @@ export class ProjectIO {
           const arrayBuffer = await file.async('arraybuffer');
           const samples = await this.wavToFloat32(arrayBuffer);
           
-          // Find the index for this sound
           const baseName = relativePath.replace(/\.wav$/, '');
           const originalName = Object.entries(state.soundFiles).find(
             ([, name]) => name.replace(/\.[^/.]+$/, '') === baseName
@@ -112,6 +130,14 @@ export class ProjectIO {
           if (originalName) {
             const index = parseInt(originalName[0]);
             audioEngine.loadSoundFromSamples(index, originalName[1], samples);
+            // Store in page manager
+            pageManager.storeSoundData(index, {
+              index,
+              name: originalName[1],
+              samples,
+              sampleRate: 48000,
+              duration: samples.length / 48000,
+            });
           }
         })();
         
@@ -121,12 +147,120 @@ export class ProjectIO {
       await Promise.all(soundPromises);
     }
     
-    // Apply state
+    // Apply state using legacy method
     this.applyState(state);
   }
   
   /**
-   * Collect current state for export
+   * Import multi-page project (version 2)
+   */
+  private async importMultiPageProject(zip: JSZip, project: MultiPageProject): Promise<void> {
+    // Apply global settings first
+    bpmController.importState({
+      bpm: project.bpm,
+      metronome: project.metronome,
+    });
+    audioEngine.setMasterVolume(project.masterVolume);
+    
+    // Load sounds for each page
+    const soundsFolder = zip.folder(this.soundsFolder);
+    
+    for (const pageState of project.pages) {
+      const pageFolder = soundsFolder?.folder(`page_${pageState.index}`);
+      
+      if (pageFolder) {
+        const soundPromises: Promise<{index: number; name: string; samples: Float32Array} | null>[] = [];
+        
+        pageFolder.forEach((relativePath, file) => {
+          if (file.dir) return;
+          
+          const promise = (async () => {
+            const arrayBuffer = await file.async('arraybuffer');
+            const samples = await this.wavToFloat32(arrayBuffer);
+            
+            // Parse filename: "{soundIndex}_{originalName}.wav"
+            const match = relativePath.match(/^(\d+)_(.+)\.wav$/);
+            if (match) {
+              const soundIndex = parseInt(match[1]);
+              const originalName = match[2] + '.wav';
+              return { index: soundIndex, name: originalName, samples };
+            }
+            return null;
+          })();
+          
+          soundPromises.push(promise);
+        });
+        
+        const loadedSounds = await Promise.all(soundPromises);
+        
+        // Store sounds in project for this page
+        for (const sound of loadedSounds) {
+          if (sound) {
+            // Temporarily store - will be loaded when page is activated
+            const soundData: SoundData = {
+              index: sound.index,
+              name: sound.name,
+              samples: sound.samples,
+              sampleRate: 48000,
+              duration: sound.samples.length / 48000,
+            };
+            
+            // Store in the page state before import
+            pageState.soundFiles[sound.index] = sound.name;
+          }
+        }
+      }
+    }
+    
+    // Import pages into page manager
+    pageManager.importProject(project);
+    
+    // Now load sounds for all pages into audio engine
+    for (const pageState of project.pages) {
+      const pageFolder = soundsFolder?.folder(`page_${pageState.index}`);
+      
+      if (pageFolder) {
+        const soundPromises: Promise<void>[] = [];
+        
+        pageFolder.forEach((relativePath, file) => {
+          if (file.dir) return;
+          
+          const promise = (async () => {
+            const arrayBuffer = await file.async('arraybuffer');
+            const samples = await this.wavToFloat32(arrayBuffer);
+            
+            const match = relativePath.match(/^(\d+)_(.+)\.wav$/);
+            if (match) {
+              const soundIndex = parseInt(match[1]);
+              const originalName = match[2];
+              
+              // Load sound into audio engine
+              audioEngine.loadSoundFromSamples(soundIndex, originalName, samples);
+              
+              // Store in page manager
+              const page = pageManager.getAllPages()[pageState.index];
+              if (page) {
+                page.sounds.set(soundIndex, {
+                  index: soundIndex,
+                  name: originalName,
+                  samples,
+                  sampleRate: 48000,
+                  duration: samples.length / 48000,
+                });
+              }
+            }
+          })();
+          
+          soundPromises.push(promise);
+        });
+        
+        await Promise.all(soundPromises);
+      }
+    }
+  }
+  
+  /**
+   * Collect current state for export (legacy compatibility)
    */
   private collectState(): ProjectState {
     const bpmState = bpmController.exportState();

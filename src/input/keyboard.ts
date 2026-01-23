@@ -3,9 +3,11 @@
  * 
  * Captures keyboard events and translates them to note triggers.
  * Handles key repeat prevention and tracks held keys.
+ * Supports pad-triggered page jumps.
  */
 
 import { audioEngine } from '../audio/engine';
+import { pageManager } from '../pages/manager';
 import { KEY_CODES } from '../types';
 
 // ============================================================================
@@ -64,6 +66,10 @@ export class KeyboardHandler {
     
     // Mark key as held
     this.heldKeys.add(keyCode);
+    
+    // === PAD-TRIGGERED PAGE JUMP ===
+    // Check if this pad should trigger a page jump before playing sound
+    pageManager.handlePadTrigger(keyCode);
     
     // Trigger note
     audioEngine.noteOn(keyCode);

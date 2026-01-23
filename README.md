@@ -5,6 +5,7 @@ A minimalist, low-latency web-based launchpad application that transforms your c
 ## Features
 
 - **Low-latency audio playback** using Web Audio API + AudioWorklet
+- **Multi-page support** - Up to 10 independent pages per project
 - **Keyboard-to-sound mapping** - Each key triggers a sound
 - **Multiple playback modes**:
   - Single Shot: Sound plays once on key press
@@ -12,6 +13,7 @@ A minimalist, low-latency web-based launchpad application that transforms your c
 - **Modulation system** with sidechain-style presets (1/4, 1/8, 1/16 note)
 - **Sound overlap control** - Polyphonic or Monophonic per group
 - **Per-key volume and pitch control** (±24 semitones)
+- **Pad-triggered page jumps** - Configure pads to switch pages
 - **Global BPM control** with optional metronome
 - **Project export/import** - Save and load complete projects as .qeyloop files
 - **No external dependencies** for audio processing
@@ -56,11 +58,27 @@ Row 4: Z X C V B N M , . /
 ### Controls
 
 - **ESC**: Panic (stop all sounds)
+- **Shift + 1-0**: Switch pages (1-10)
 - **Left Click on Pad**: Select pad for editing
 - **Right Click on Pad**: Toggle playback mode (Single/Loop)
 - **Drag & Drop**: Load audio file onto pad
 - **Ctrl+C**: Copy selected pad's sound
 - **Ctrl+V**: Paste copied sound to selected pad
+
+### Page System
+
+The application supports up to 10 independent pages. Each page contains:
+- Its own sound set and key mappings
+- Separate mode settings
+- Independent modulation and overlap configurations
+
+**Switching pages:**
+- Click page tabs (1-10) in the header
+- Use **Shift + 1-0** hotkeys
+
+**Pad-triggered page jumps:**
+- Select a pad and set "Page Jump" to any page (1-10)
+- When pressed, the pad will switch to that page before playing its sound
 
 ### Control Panel
 

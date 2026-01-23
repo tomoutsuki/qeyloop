@@ -8,6 +8,7 @@
 import { audioEngine } from '../audio/engine';
 import { modeManager } from '../modes/manager';
 import { keyboardHandler } from '../input/keyboard';
+import { pageManager } from '../pages/manager';
 import {
   KEYBOARD_LAYOUT,
   KEY_CODES,
@@ -29,12 +30,6 @@ export class PadGrid {
   
   /** Currently selected pad for editing */
   private selectedPad: number | null = null;
-  
-  /** Map of keyCode to assigned sound index */
-  private keySoundIndices: Map<number, number> = new Map();
-  
-  /** Next available sound slot (globally) */
-  private nextSoundIndex = 0;
   
   /** Copied pad keyCode for copy/paste functionality */
   private copiedPadKeyCode: number | null = null;
@@ -213,17 +208,21 @@ export class PadGrid {
     }
     
     try {
-      // Check if this key already has a sound index assigned
-      let soundIndex = this.keySoundIndices.get(keyCode);
+      // === PAGE-AWARE SOUND LOADING ===
+      // Check if this key already has a sound index assigned on current page
+      let soundIndex = pageManager.getKeySoundIndex(keyCode);
       
       if (soundIndex === undefined) {
-        // Allocate new sound slot for this key
-        soundIndex = this.nextSoundIndex++;
-        this.keySoundIndices.set(keyCode, soundIndex);
+        // Allocate new sound slot for this key on current page
+        soundIndex = pageManager.incrementNextSoundIndex();
+        pageManager.setKeySoundIndex(keyCode, soundIndex);
       }
       
       // Load sound into the key's dedicated slot
-      await audioEngine.loadSound(soundIndex, file);
+      const soundData = await audioEngine.loadSound(soundIndex, file);
+      
+      // Store sound data in page manager for export
+      pageManager.storeSoundData(soundIndex, soundData);
       
       // Assign to key
       modeManager.assignSound(keyCode, soundIndex, file.name);
@@ -277,10 +276,10 @@ export class PadGrid {
   }
   
   /**
-   * Get next available sound slot
+   * Get next available sound slot (from page manager)
    */
   getNextSoundIndex(): number {
-    return this.nextSoundIndex;
+    return pageManager.getNextSoundIndex();
   }
   
   /**
@@ -290,8 +289,9 @@ export class PadGrid {
     const fromMapping = modeManager.getMapping(fromKeyCode);
     if (!fromMapping?.hasSound) return;
     
-    // Assign the same sound index to the target key
-    this.keySoundIndices.set(toKeyCode, fromMapping.soundIndex);
+    // === PAGE-AWARE COPY ===
+    // Assign the same sound index to the target key on current page
+    pageManager.setKeySoundIndex(toKeyCode, fromMapping.soundIndex);
     modeManager.assignSound(toKeyCode, fromMapping.soundIndex, fromMapping.soundName);
   }
   
@@ -312,5 +312,19 @@ export class PadGrid {
    */
   getSelectedPad(): number | null {
     return this.selectedPad;
+  }
+  
+  /**
+   * Get copied pad key code for copy/paste
+   */
+  getCopiedPadKeyCode(): number | null {
+    return this.copiedPadKeyCode;
+  }
+  
+  /**
+   * Set copied pad key code for copy/paste
+   */
+  setCopiedPadKeyCode(keyCode: number | null): void {
+    this.copiedPadKeyCode = keyCode;
   }
 }

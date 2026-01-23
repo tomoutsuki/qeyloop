@@ -109,12 +109,87 @@ body {
   background: #222;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .header h1 {
   font-size: 20px;
   font-weight: 600;
   color: #fff;
+}
+
+/* ============================================================================
+   PAGE SELECTOR
+   ============================================================================ */
+
+.page-selector {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.page-tab {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: #333;
+  border: 1px solid #444;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-tab:hover {
+  background: #3a3a3a;
+  border-color: #555;
+  color: #aaa;
+}
+
+.page-tab.active {
+  background: #0066cc;
+  border-color: #0088ff;
+  color: #fff;
+}
+
+.page-tab.hidden {
+  display: none;
+}
+
+.page-tab.has-content {
+  color: #8f8;
+}
+
+.page-tab.has-content.active {
+  color: #fff;
+}
+
+.page-add-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px dashed #444;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-add-btn:hover {
+  border-color: #666;
+  color: #888;
+}
+
+.page-add-btn.hidden {
+  display: none;
 }
 
 .content {

@@ -9,6 +9,7 @@ import { audioEngine } from '../audio/engine';
 import { modeManager } from '../modes/manager';
 import { bpmController } from '../timing/bpm';
 import { projectIO } from '../project/io';
+import { pageManager, MAX_PAGES } from '../pages/manager';
 import {
   PlaybackMode,
   OverlapMode,
@@ -44,6 +45,7 @@ export class ControlPanel {
     modToggle?: HTMLButtonElement;
     masterVolume?: HTMLInputElement;
     selectedKeyLabel?: HTMLSpanElement;
+    pageJumpSelect?: HTMLSelectElement;
   } = {};
   
   constructor(containerId: string) {
@@ -91,6 +93,7 @@ export class ControlPanel {
     padSection.appendChild(this.createPadPitchControl());
     padSection.appendChild(this.createPadModulationControl());
     padSection.appendChild(this.createPadOverlapControl());
+    padSection.appendChild(this.createPadPageJumpControl());
     padSection.appendChild(this.createSoundUploadControl());
     this.container.appendChild(padSection);
     
@@ -384,6 +387,42 @@ export class ControlPanel {
   }
   
   /**
+   * Create pad page jump control
+   * === PAD-TRIGGERED PAGE JUMP ===
+   * Allows configuring a pad to jump to a specific page when pressed
+   */
+  private createPadPageJumpControl(): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'control-row';
+    
+    const label = document.createElement('label');
+    label.textContent = 'Page Jump';
+    container.appendChild(label);
+    
+    const select = document.createElement('select');
+    select.className = 'select page-jump-select';
+    
+    // "None" option
+    const noneOption = document.createElement('option');
+    noneOption.value = '-1';
+    noneOption.textContent = 'None';
+    select.appendChild(noneOption);
+    
+    // Page options (1-10)
+    for (let i = 0; i < MAX_PAGES; i++) {
+      const option = document.createElement('option');
+      option.value = i.toString();
+      option.textContent = `Page ${i + 1}`;
+      select.appendChild(option);
+    }
+    
+    this.elements.pageJumpSelect = select;
+    container.appendChild(select);
+    
+    return container;
+  }
+  
+  /**
    * Create sound upload control
    */
   private createSoundUploadControl(): HTMLElement {
@@ -581,6 +620,15 @@ export class ControlPanel {
       }
     });
     
+    // === PAGE JUMP SELECT ===
+    // Configure pad to jump to a specific page when pressed
+    this.elements.pageJumpSelect?.addEventListener('change', (e) => {
+      if (this.selectedKeyCode !== null) {
+        const targetPage = parseInt((e.target as HTMLSelectElement).value);
+        pageManager.setPadPageJump(this.selectedKeyCode, targetPage);
+      }
+    });
+    
     // Sound file input
     this.soundFileInput?.addEventListener('change', async () => {
       const file = this.soundFileInput?.files?.[0];
@@ -652,6 +700,12 @@ export class ControlPanel {
     if (this.elements.groupInput) {
       this.elements.groupInput.value = mapping.groupId.toString();
     }
+    
+    // === PAGE JUMP: Update page jump select ===
+    if (this.elements.pageJumpSelect) {
+      const pageJump = pageManager.getPadPageJump(keyCode);
+      this.elements.pageJumpSelect.value = pageJump.toString();
+    }
   }
   
   /**
@@ -711,5 +765,12 @@ export class ControlPanel {
     if (this.selectedKeyCode !== null) {
       this.selectPad(this.selectedKeyCode);
     }
+  }
+  
+  /**
+   * Public refresh for page changes
+   */
+  refresh(): void {
+    this.refreshFromState();
   }
 }
