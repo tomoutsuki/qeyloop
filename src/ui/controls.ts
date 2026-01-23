@@ -470,14 +470,20 @@ export class ControlPanel {
       if (!isNaN(value)) {
         bpmController.setBpm(value);
       }
+      // Blur after change to restore keyboard focus
+      (e.target as HTMLInputElement).blur();
     });
     
-    // Prevent inputs from keeping focus
-    this.elements.bpmInput?.addEventListener('blur', () => {
-      document.body.focus();
+    // Blur inputs on Enter key
+    this.elements.bpmInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        (e.target as HTMLInputElement).blur();
+      }
     });
-    this.elements.groupInput?.addEventListener('blur', () => {
-      document.body.focus();
+    this.elements.groupInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        (e.target as HTMLInputElement).blur();
+      }
     });
     
     // BPM callback
@@ -519,14 +525,20 @@ export class ControlPanel {
       }
     });
     
-    // Prevent all sliders from stealing keyboard focus
-    const preventFocus = (e: MouseEvent) => {
-      e.preventDefault();
-      (e.target as HTMLElement).blur();
+    // Prevent sliders from keeping keyboard focus after interaction
+    const blurAfterRelease = (slider: HTMLElement) => {
+      const onMouseUp = () => {
+        slider.blur();
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+      slider.addEventListener('mousedown', () => {
+        document.addEventListener('mouseup', onMouseUp);
+      });
     };
-    this.elements.volumeSlider?.addEventListener('mousedown', preventFocus);
-    this.elements.pitchSlider?.addEventListener('mousedown', preventFocus);
-    this.elements.masterVolume?.addEventListener('mousedown', preventFocus);
+    
+    if (this.elements.volumeSlider) blurAfterRelease(this.elements.volumeSlider);
+    if (this.elements.pitchSlider) blurAfterRelease(this.elements.pitchSlider);
+    if (this.elements.masterVolume) blurAfterRelease(this.elements.masterVolume);
     
     // Pitch slider
     this.elements.pitchSlider?.addEventListener('input', (e) => {
