@@ -9,6 +9,8 @@ import { Command, commandExecutor } from '../edit/commands';
 import { clipboardManager, ClipboardType } from '../edit/clipboard';
 import { historyManager } from '../edit/history';
 import { HotkeyHandler } from '../input/hotkeys';
+import { audioEngine } from '../audio/engine';
+import { bpmController } from '../timing/bpm';
 
 // ============================================================================
 // MENU DEFINITIONS
@@ -47,6 +49,15 @@ export class Toolbar {
   
   /** Callback for UI refresh */
   private onRefresh: (() => void) | null = null;
+  
+  /** BPM input element */
+  private bpmInput: HTMLInputElement | null = null;
+  
+  /** Master volume slider */
+  private masterVolumeSlider: HTMLInputElement | null = null;
+  
+  /** Metronome button */
+  private metronomeBtn: HTMLButtonElement | null = null;
   
   constructor(containerId: string) {
     const el = document.getElementById(containerId);
@@ -188,22 +199,126 @@ export class Toolbar {
     this.container.innerHTML = '';
     this.container.className = 'toolbar';
     
-    // Menu bar
-    const menuBar = document.createElement('div');
-    menuBar.className = 'toolbar-menubar';
+    // Left section: Menus
+    const leftSection = document.createElement('div');
+    leftSection.className = 'toolbar-left';
     
     for (const menu of this.menus) {
       const menuEl = this.createMenuButton(menu);
-      menuBar.appendChild(menuEl);
+      leftSection.appendChild(menuEl);
     }
     
-    this.container.appendChild(menuBar);
+    this.container.appendChild(leftSection);
     
-    // Status bar
+    // Center section: Transport controls
+    const centerSection = document.createElement('div');
+    centerSection.className = 'toolbar-center';
+    
+    // BPM control
+    const bpmLabel = document.createElement('span');
+    bpmLabel.textContent = 'BPM:';
+    bpmLabel.className = 'toolbar-label';
+    centerSection.appendChild(bpmLabel);
+    
+    this.bpmInput = document.createElement('input');
+    this.bpmInput.type = 'number';
+    this.bpmInput.min = '20';
+    this.bpmInput.max = '300';
+    this.bpmInput.value = String(bpmController.getBpm());
+    this.bpmInput.className = 'toolbar-input toolbar-bpm';
+    this.bpmInput.style.width = '60px';
+    centerSection.appendChild(this.bpmInput);
+    
+    // BPM buttons
+    const bpmHalfBtn = document.createElement('button');
+    bpmHalfBtn.textContent = '÷2';
+    bpmHalfBtn.className = 'toolbar-btn-small';
+    bpmHalfBtn.title = 'Halve BPM';
+    centerSection.appendChild(bpmHalfBtn);
+    
+    const bpmDoubleBtn = document.createElement('button');
+    bpmDoubleBtn.textContent = '×2';
+    bpmDoubleBtn.className = 'toolbar-btn-small';
+    bpmDoubleBtn.title = 'Double BPM';
+    centerSection.appendChild(bpmDoubleBtn);
+    
+    // Metronome button
+    this.metronomeBtn = document.createElement('button');
+    this.metronomeBtn.textContent = '🔇';
+    this.metronomeBtn.className = 'toolbar-btn';
+    this.metronomeBtn.title = 'Toggle Metronome';
+    centerSection.appendChild(this.metronomeBtn);
+    
+    // Master volume
+    const volumeLabel = document.createElement('span');
+    volumeLabel.textContent = '🔊';
+    volumeLabel.className = 'toolbar-label';
+    centerSection.appendChild(volumeLabel);
+    
+    this.masterVolumeSlider = document.createElement('input');
+    this.masterVolumeSlider.type = 'range';
+    this.masterVolumeSlider.min = '0';
+    this.masterVolumeSlider.max = '100';
+    this.masterVolumeSlider.value = '100';
+    this.masterVolumeSlider.className = 'toolbar-slider';
+    this.masterVolumeSlider.style.width = '100px';
+    centerSection.appendChild(this.masterVolumeSlider);
+    
+    // Panic button
+    const panicBtn = document.createElement('button');
+    panicBtn.textContent = '⚠️ PANIC';
+    panicBtn.className = 'toolbar-btn toolbar-panic';
+    panicBtn.title = 'Stop all sounds (ESC)';
+    centerSection.appendChild(panicBtn);
+    
+    this.container.appendChild(centerSection);
+    
+    // Right section: Status
+    const rightSection = document.createElement('div');
+    rightSection.className = 'toolbar-right';
+    
     const statusBar = document.createElement('div');
     statusBar.className = 'toolbar-status';
     this.statusEl = statusBar;
-    this.container.appendChild(statusBar);
+    rightSection.appendChild(statusBar);
+    
+    this.container.appendChild(rightSection);
+    
+    // Setup transport event listeners
+    this.bpmInput.addEventListener('change', (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      if (!isNaN(value)) {
+        bpmController.setBpm(value);
+      }
+    });
+    
+    bpmHalfBtn.addEventListener('click', () => {
+      bpmController.halveBpm();
+      if (this.bpmInput) {
+        this.bpmInput.value = String(bpmController.getBpm());
+      }
+    });
+    
+    bpmDoubleBtn.addEventListener('click', () => {
+      bpmController.doubleBpm();
+      if (this.bpmInput) {
+        this.bpmInput.value = String(bpmController.getBpm());
+      }
+    });
+    
+    this.metronomeBtn.addEventListener('click', () => {
+      bpmController.toggleMetronome();
+      this.updateMetronomeButton();
+    });
+    
+    this.masterVolumeSlider.addEventListener('input', (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value) / 100;
+      audioEngine.setMasterVolume(value);
+    });
+    
+    panicBtn.addEventListener('click', () => {
+      audioEngine.panic();
+    });
   }
   
   /**
@@ -428,6 +543,21 @@ export class Toolbar {
       const typeStr = clipboardType === ClipboardType.AudioOnly ? 'audio' : 'pad';
       const actionStr = wasCut ? 'Cut' : 'Copied';
       console.log(`[Toolbar] Clipboard: ${actionStr} ${typeStr}`);
+    }
+  }
+  
+  /**
+   * Update metronome button state
+   */
+  private updateMetronomeButton(): void {
+    if (!this.metronomeBtn) return;
+    
+    if (bpmController.isMetronomeEnabled()) {
+      this.metronomeBtn.textContent = '🔔';
+      this.metronomeBtn.classList.add('active');
+    } else {
+      this.metronomeBtn.textContent = '🔇';
+      this.metronomeBtn.classList.remove('active');
     }
   }
 }

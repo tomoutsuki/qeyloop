@@ -219,14 +219,112 @@ body {
   align-items: center;
   background: #252525;
   border-bottom: 1px solid #333;
-  height: 32px;
+  height: 36px;
   padding: 0 8px;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.toolbar-left {
+  display: flex;
+  gap: 0;
   flex-shrink: 0;
 }
 
-.toolbar-menubar {
+.toolbar-center {
   display: flex;
-  gap: 0;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.toolbar-label {
+  color: #aaa;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toolbar-input {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+.toolbar-input:focus {
+  outline: none;
+  border-color: #0066cc;
+}
+
+.toolbar-bpm {
+  width: 60px;
+  text-align: center;
+}
+
+.toolbar-slider {
+  width: 100px;
+  height: 20px;
+}
+
+.toolbar-btn {
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.toolbar-btn-small {
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  min-width: 32px;
+}
+
+.toolbar-btn-small:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.toolbar-btn.active {
+  background: #0066cc;
+  border-color: #0088ff;
+  color: #fff;
+}
+
+.toolbar-panic {
+  background: #661100;
+  border-color: #882200;
+  color: #ff8866;
+  font-weight: 600;
+}
+
+.toolbar-panic:hover {
+  background: #882200;
+  border-color: #aa3300;
+  color: #ffaa88;
 }
 
 .menu-wrapper {

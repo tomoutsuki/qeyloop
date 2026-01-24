@@ -72,13 +72,6 @@ export class ControlPanel {
     this.container.innerHTML = '';
     this.container.className = 'control-panel';
     
-    // Transport section
-    const transportSection = this.createSection('Transport');
-    transportSection.appendChild(this.createBpmControl());
-    transportSection.appendChild(this.createMetronomeControl());
-    transportSection.appendChild(this.createMasterVolumeControl());
-    this.container.appendChild(transportSection);
-    
     // Modulation section
     const modSection = this.createSection('Modulation');
     modSection.appendChild(this.createModulationPresetControl());
@@ -96,14 +89,6 @@ export class ControlPanel {
     padSection.appendChild(this.createPadPageJumpControl());
     padSection.appendChild(this.createSoundUploadControl());
     this.container.appendChild(padSection);
-    
-    // Project section
-    const projectSection = this.createSection('Project');
-    projectSection.appendChild(this.createProjectControls());
-    this.container.appendChild(projectSection);
-    
-    // Panic button
-    this.container.appendChild(this.createPanicButton());
   }
   
   /**
