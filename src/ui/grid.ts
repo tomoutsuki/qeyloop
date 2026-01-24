@@ -9,6 +9,8 @@ import { audioEngine } from '../audio/engine';
 import { modeManager } from '../modes/manager';
 import { keyboardHandler } from '../input/keyboard';
 import { pageManager } from '../pages/manager';
+import { clipboardManager } from '../edit/clipboard';
+import { commandExecutor } from '../edit/commands';
 import {
   KEYBOARD_LAYOUT,
   KEY_CODES,
@@ -181,6 +183,9 @@ export class PadGrid {
     this.selectedPad = keyCode;
     this.padElements.get(keyCode)?.classList.add('selected');
     
+    // Update command executor
+    commandExecutor.setSelectedPad(keyCode);
+    
     this.onPadSelect?.(keyCode);
   }
   
@@ -308,7 +313,33 @@ export class PadGrid {
         this.updatePadDisplay(keyCode, mapping);
       }
     }
+    // Update clipboard highlight
+    this.updateClipboardHighlight();
     console.log(`Grid: Refreshed ${this.padElements.size} pads, ${padsWithSounds} have sounds`);
+  }
+  
+  /**
+   * Update clipboard source highlight
+   */
+  updateClipboardHighlight(): void {
+    // Clear all clipboard highlights
+    for (const pad of this.padElements.values()) {
+      pad.classList.remove('clipboard-source', 'clipboard-cut');
+    }
+    
+    // Apply highlight to source pad if clipboard has content
+    if (clipboardManager.hasContent()) {
+      const sourceKeyCode = clipboardManager.getSourceKeyCode();
+      if (sourceKeyCode !== null) {
+        const pad = this.padElements.get(sourceKeyCode);
+        if (pad) {
+          pad.classList.add('clipboard-source');
+          if (clipboardManager.wasCut()) {
+            pad.classList.add('clipboard-cut');
+          }
+        }
+      }
+    }
   }
   
   /**

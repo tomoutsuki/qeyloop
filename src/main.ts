@@ -7,12 +7,15 @@
 
 import { audioEngine } from './audio/engine';
 import { keyboardHandler } from './input/keyboard';
+import { hotkeyHandler } from './input/hotkeys';
 import { modeManager } from './modes/manager';
 import { bpmController } from './timing/bpm';
 import { pageManager } from './pages/manager';
+import { commandExecutor } from './edit/commands';
 import { PadGrid } from './ui/grid';
 import { ControlPanel } from './ui/controls';
 import { PageSelector } from './ui/pages';
+import { Toolbar, createToolbar } from './ui/toolbar';
 
 // ============================================================================
 // APPLICATION STATE
@@ -21,6 +24,7 @@ import { PageSelector } from './ui/pages';
 let padGrid: PadGrid;
 let controlPanel: ControlPanel;
 let pageSelector: PageSelector;
+let toolbar: Toolbar;
 let isInitialized = false;
 
 // ============================================================================
@@ -53,6 +57,7 @@ async function initializeApp(): Promise<void> {
     modeManager.initialize();
     bpmController.initialize();
     keyboardHandler.initialize();
+    hotkeyHandler.initialize();
     
     // === PAGE SYSTEM: Initialize page manager ===
     pageManager.initialize();
@@ -67,6 +72,25 @@ async function initializeApp(): Promise<void> {
     // === PAGE SYSTEM: Initialize page selector UI ===
     pageSelector = new PageSelector('page-selector');
     pageSelector.initialize();
+    
+    // === TOOLBAR: Initialize toolbar UI ===
+    toolbar = createToolbar('toolbar');
+    toolbar.initialize();
+    toolbar.setRefreshCallback(() => {
+      padGrid.refreshAll();
+      controlPanel.refresh();
+    });
+    
+    // === COMMAND SYSTEM: Wire up command executor ===
+    commandExecutor.setRefreshCallback(() => {
+      padGrid.refreshAll();
+      controlPanel.refresh();
+    });
+    
+    // === HOTKEY SYSTEM: Update clipboard highlight on changes ===
+    hotkeyHandler.setClipboardChangeCallback(() => {
+      padGrid.updateClipboardHighlight();
+    });
     
     // Connect pad selection to control panel
     padGrid.setPadSelectCallback((keyCode) => {
@@ -184,26 +208,7 @@ function setup(): void {
       return;
     }
     
-    // Copy pad (Ctrl+C or Cmd+C)
-    if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-      const selectedPad = padGrid?.getSelectedPad();
-      if (selectedPad !== null) {
-        padGrid.setCopiedPadKeyCode(selectedPad);
-        event.preventDefault();
-      }
-      return;
-    }
-    
-    // Paste pad (Ctrl+V or Cmd+V)
-    if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
-      const selectedPad = padGrid?.getSelectedPad();
-      const copiedPad = padGrid?.getCopiedPadKeyCode();
-      if (selectedPad !== null && copiedPad !== null) {
-        padGrid?.copySoundToKey(copiedPad, selectedPad);
-        event.preventDefault();
-      }
-      return;
-    }
+    // Note: Copy/Cut/Paste and Undo/Redo are now handled by hotkeyHandler
   });
   
   // Prevent spacebar from scrolling

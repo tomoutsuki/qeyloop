@@ -210,6 +210,191 @@ body {
 }
 
 /* ============================================================================
+   TOOLBAR
+   ============================================================================ */
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #252525;
+  border-bottom: 1px solid #333;
+  height: 32px;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+.toolbar-menubar {
+  display: flex;
+  gap: 0;
+}
+
+.menu-wrapper {
+  position: relative;
+}
+
+.menu-button {
+  background: transparent;
+  border: none;
+  color: #ccc;
+  font-size: 13px;
+  padding: 6px 12px;
+  cursor: pointer;
+  height: 32px;
+}
+
+.menu-button:hover,
+.menu-wrapper.open .menu-button {
+  background: #333;
+  color: #fff;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  min-width: 200px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: #ddd;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.menu-item:hover:not(.disabled) {
+  background: #0066cc;
+  color: #fff;
+}
+
+.menu-item.disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.menu-item-label {
+  flex: 1;
+}
+
+.menu-item-shortcut {
+  color: #888;
+  font-size: 11px;
+  margin-left: 24px;
+}
+
+.menu-item:hover:not(.disabled) .menu-item-shortcut {
+  color: #aaa;
+}
+
+.menu-separator {
+  height: 1px;
+  background: #444;
+  margin: 4px 0;
+}
+
+.toolbar-status {
+  font-size: 12px;
+  color: #888;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.toolbar-status.visible {
+  opacity: 1;
+}
+
+/* ============================================================================
+   MODAL
+   ============================================================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  padding: 24px;
+  min-width: 300px;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.modal h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.modal p {
+  color: #bbb;
+  margin-bottom: 12px;
+}
+
+.modal-close {
+  margin-top: 16px;
+  padding: 8px 24px;
+  background: #444;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-close:hover {
+  background: #555;
+}
+
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+}
+
+.shortcut-key {
+  font-family: monospace;
+  background: #333;
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.shortcut-desc {
+  color: #aaa;
+  font-size: 13px;
+}
+
+/* ============================================================================
    PAD GRID
    ============================================================================ */
 
@@ -254,6 +439,19 @@ body {
 
 .pad.selected {
   border-color: #0088ff;
+}
+
+/* Clipboard source highlight - copied pad */
+.pad.clipboard-source {
+  border-color: #00cc66;
+  box-shadow: inset 0 0 0 2px rgba(0, 204, 102, 0.3);
+}
+
+/* Clipboard source highlight - cut pad */
+.pad.clipboard-source.clipboard-cut {
+  border-color: #ff6600;
+  box-shadow: inset 0 0 0 2px rgba(255, 102, 0, 0.3);
+  opacity: 0.6;
 }
 
 .pad.dragover {
