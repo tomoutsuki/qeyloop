@@ -631,6 +631,17 @@ export class PageManager {
     this.onPageChange?.(this.activePageIndex);
     this.onPagesUpdate?.(this.pages, this.activePageIndex);
   }
+  
+  /**
+   * Rename a page
+   */
+  renamePage(pageIndex: number, name: string): void {
+    const page = this.pages[pageIndex];
+    if (page) {
+      page.name = name;
+      this.onPagesUpdate?.(this.pages, this.activePageIndex);
+    }
+  }
 }
 
 // Singleton instance

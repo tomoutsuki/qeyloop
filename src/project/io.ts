@@ -1,164 +1,213 @@
 /**
  * Qeyloop Project Import/Export
  * 
- * Handles saving and loading complete projects as ZIP files.
- * Supports multi-page projects (version 2).
- * Includes:
- * - All sound files (per page)
- * - Key mappings
- * - Mode settings
- * - BPM settings
- * - Page configurations
+ * NEW FILE FORMAT SYSTEM:
+ * - .keypage → Single page file (standalone)
+ * - .keyloop → Multi-page project container (ZIP of .keypage files)
+ * 
+ * All per-pad and per-page parameters are fully persisted.
+ * No backward compatibility with old formats (as per requirements).
  */
 
 import JSZip from 'jszip';
 import { audioEngine } from '../audio/engine';
 import { modeManager } from '../modes/manager';
 import { bpmController } from '../timing/bpm';
-import { pageManager, MultiPageProject, SerializablePageState } from '../pages/manager';
+import { pageManager, PageState } from '../pages/manager';
 import {
-  ProjectState,
   KeyMapping,
   ModulationPreset,
   SoundData,
-  createDefaultProjectState,
+  KeyPageFile,
+  KeyLoopFile,
+  PadSettings,
+  KeyLoopPageEntry,
+  generatePageId,
+  PlaybackMode,
+  OverlapMode,
 } from '../types';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+/** File extensions */
+const KEYPAGE_EXTENSION = '.keypage';
+const KEYLOOP_EXTENSION = '.keyloop';
+
+/** Manifest filenames */
+const KEYPAGE_MANIFEST = 'page.json';
+const KEYLOOP_MANIFEST = 'project.json';
+
+/** Sounds folder in ZIP */
+const SOUNDS_FOLDER = 'sounds/';
 
 // ============================================================================
 // PROJECT IO
 // ============================================================================
 
 export class ProjectIO {
-  /** Project file extension */
-  private readonly extension = '.qeyloop';
   
-  /** Manifest file name in ZIP */
-  private readonly manifestName = 'project.json';
-  
-  /** Sounds folder in ZIP */
-  private readonly soundsFolder = 'sounds/';
+  // ==========================================================================
+  // .KEYPAGE EXPORT (Single Page)
+  // ==========================================================================
   
   /**
-   * Export current project to a downloadable ZIP file
-   * === MULTI-PAGE EXPORT ===
+   * Export a single page as .keypage file
+   * @param pageIndex Page index to export (defaults to active page)
+   * @param fileName Optional custom filename
    */
-  async exportProject(projectName: string = 'project'): Promise<void> {
+  async exportPage(pageIndex?: number, fileName?: string): Promise<void> {
+    // Default to active page
+    const targetIndex = pageIndex ?? pageManager.getActivePageIndex();
+    const page = pageManager.getAllPages()[targetIndex];
+    
+    if (!page) {
+      throw new Error(`Page ${targetIndex} does not exist`);
+    }
+    
+    // Save current state first
+    pageManager.saveCurrentPageState();
+    
     const zip = new JSZip();
     
-    // Collect multi-page project state
-    const projectState = pageManager.exportProject();
+    // Build the .keypage manifest
+    const keyPageFile = this.buildKeyPageManifest(page);
     
     // Add manifest
-    zip.file(this.manifestName, JSON.stringify(projectState, null, 2));
+    zip.file(KEYPAGE_MANIFEST, JSON.stringify(keyPageFile, null, 2));
     
-    // Add sound files for all pages
-    const soundsFolder = zip.folder(this.soundsFolder);
+    // Add sound files
+    const soundsFolder = zip.folder(SOUNDS_FOLDER);
     if (soundsFolder) {
-      // Get all sounds from all pages
-      const allPages = pageManager.getAllPages();
-      for (const page of allPages) {
-        const pageFolder = soundsFolder.folder(`page_${page.index}`);
-        if (pageFolder) {
-          for (const [soundIndex, sound] of page.sounds) {
-            // Convert Float32Array to WAV format
-            const wavData = this.float32ToWav(sound.samples, sound.sampleRate);
-            pageFolder.file(`${soundIndex}_${sound.name.replace(/\.[^/.]+$/, '.wav')}`, wavData);
-          }
-        }
+      for (const [soundIndex, sound] of page.sounds) {
+        const wavData = this.float32ToWav(sound.samples, sound.sampleRate);
+        // Store as: {localIndex}_{filename}.wav (localIndex is 0-63 within page)
+        const localIndex = soundIndex % 64;
+        soundsFolder.file(`${localIndex}_${sound.name.replace(/\.[^/.]+$/, '.wav')}`, wavData);
       }
     }
     
-    // Generate ZIP file
+    // Generate and download
     const blob = await zip.generateAsync({ type: 'blob' });
-    
-    // Trigger download
-    this.downloadBlob(blob, `${projectName}${this.extension}`);
+    const name = fileName || `${page.name.replace(/\s+/g, '_')}${KEYPAGE_EXTENSION}`;
+    this.downloadBlob(blob, name);
   }
   
   /**
-   * Import project from a ZIP file
-   * === MULTI-PAGE IMPORT ===
+   * Build .keypage manifest from page state
    */
-  async importProject(file: File): Promise<void> {
+  private buildKeyPageManifest(page: PageState): KeyPageFile {
+    const pads: PadSettings[] = [];
+    const soundFiles: { [soundIndex: number]: string } = {};
+    
+    // Convert key mappings to pad settings
+    for (const [keyCode, mapping] of page.keyMappings) {
+      // Get page jump target for this pad
+      const pageJumpTarget = page.padPageJumps.get(keyCode) ?? -1;
+      
+      // Only include pads that have sounds or page jumps
+      if (mapping.hasSound || pageJumpTarget >= 0) {
+        // Convert sound index to local (0-63) for portability
+        const localSoundIndex = mapping.hasSound ? (mapping.soundIndex % 64) : -1;
+        
+        pads.push({
+          keyCode,
+          volume: mapping.volume,
+          pitchSemitones: mapping.pitchSemitones,
+          playbackMode: mapping.mode,
+          modulationEnabled: mapping.modulationEnabled,
+          overlapMode: mapping.overlapMode,
+          overlapGroupId: mapping.groupId,
+          pageJumpTarget,
+          soundFileName: mapping.soundName,
+          soundIndex: localSoundIndex,
+          hasSound: mapping.hasSound,
+        });
+      }
+    }
+    
+    // Build sound files map (using local indices 0-63)
+    for (const [soundIndex, sound] of page.sounds) {
+      const localIndex = soundIndex % 64;
+      soundFiles[localIndex] = sound.name;
+    }
+    
+    return {
+      format: 'keypage',
+      schemaVersion: 1,
+      pageId: generatePageId(),
+      pageName: page.name,
+      modulationPreset: page.modulationPreset,
+      pads,
+      soundFiles,
+    };
+  }
+  
+  // ==========================================================================
+  // .KEYPAGE IMPORT (Single Page)
+  // ==========================================================================
+  
+  /**
+   * Import a .keypage file into a specific page slot
+   * @param file The .keypage file to import
+   * @param targetPageIndex Target page index (defaults to active page)
+   */
+  async importPage(file: File, targetPageIndex?: number): Promise<void> {
     const zip = await JSZip.loadAsync(file);
     
     // Read manifest
-    const manifestFile = zip.file(this.manifestName);
+    const manifestFile = zip.file(KEYPAGE_MANIFEST);
     if (!manifestFile) {
-      throw new Error('Invalid project file: missing manifest');
+      throw new Error('Invalid .keypage file: missing manifest');
     }
     
     const manifestText = await manifestFile.async('text');
-    const manifest = JSON.parse(manifestText);
+    const keyPageFile = JSON.parse(manifestText) as KeyPageFile;
     
-    // Check version and delegate to appropriate importer
-    if (manifest.version === 1) {
-      await this.importLegacyProject(zip, manifest as ProjectState);
-    } else if (manifest.version === 2) {
-      await this.importMultiPageProject(zip, manifest as MultiPageProject);
-    } else {
-      throw new Error(`Unsupported project version: ${manifest.version}`);
+    // Validate format
+    if (keyPageFile.format !== 'keypage') {
+      throw new Error('Invalid file format: expected .keypage');
     }
-  }
-  
-  /**
-   * Import legacy single-page project (version 1)
-   * === REMAPS TO ACTIVE PAGE RANGE ===
-   */
-  private async importLegacyProject(zip: JSZip, state: ProjectState): Promise<void> {
-    // === CRITICAL: Get target page range ===
-    const activePage = pageManager.getActivePage();
-    const pageStart = activePage.index * 64;
-    const pageEnd = pageStart + 64;
     
-    console.log(`Importing legacy project into page ${activePage.index + 1}, remapping sounds to range ${pageStart}-${pageEnd - 1}`);
+    // Use active page if not specified
+    const pageIndex = targetPageIndex ?? pageManager.getActivePageIndex();
     
-    // === CLEAR EVERYTHING FIRST ===
-    audioEngine.panic();
+    // Switch to target page and clear it
+    pageManager.switchToPage(pageIndex);
     pageManager.clearActivePage();
     
-    // Build mapping from old indices to new indices
-    const indexRemap = new Map<number, number>();
-    let nextIndex = pageStart;
+    // Calculate target page's sound index range
+    const pageStart = pageIndex * 64;
     
     // Load sounds
-    const soundsFolder = zip.folder(this.soundsFolder);
+    const soundsFolder = zip.folder(SOUNDS_FOLDER);
     if (soundsFolder) {
-      const soundNameToIndex: Map<string, number> = new Map();
-      for (const [index, name] of Object.entries(state.soundFiles)) {
-        soundNameToIndex.set(name, parseInt(index));
-      }
-      
       const soundPromises: Promise<void>[] = [];
       
-      soundsFolder.forEach((relativePath, file) => {
-        if (file.dir) return;
+      soundsFolder.forEach((relativePath, zipFile) => {
+        if (zipFile.dir) return;
         
         const promise = (async () => {
-          const arrayBuffer = await file.async('arraybuffer');
+          const arrayBuffer = await zipFile.async('arraybuffer');
           const samples = await this.wavToFloat32(arrayBuffer);
           
-          const baseName = relativePath.replace(/\.wav$/, '');
-          const originalName = Object.entries(state.soundFiles).find(
-            ([, name]) => name.replace(/\.[^/.]+$/, '') === baseName
-          );
-          
-          if (originalName) {
-            const oldIndex = parseInt(originalName[0]);
+          // Parse filename: "{localIndex}_{originalName}.wav"
+          const match = relativePath.match(/^(\d+)_(.+)\.wav$/);
+          if (match) {
+            const localIndex = parseInt(match[1]);
+            const originalName = match[2] + '.wav';
             
-            // === REMAP: Assign new index in target page range ===
-            if (nextIndex >= pageEnd) {
-              console.warn(`Page ${activePage.index + 1} sound limit reached, skipping sound`);
-              return;
-            }
-            const newIndex = nextIndex++;
-            indexRemap.set(oldIndex, newIndex);
+            // Remap local index (0-63) to global index (pageStart + localIndex)
+            const globalIndex = pageStart + localIndex;
             
-            audioEngine.loadSoundFromSamples(newIndex, originalName[1], samples);
-            // Store in page manager with new index
-            pageManager.storeSoundData(newIndex, {
-              index: newIndex,
-              name: originalName[1],
+            // Load into audio engine
+            audioEngine.loadSoundFromSamples(globalIndex, originalName, samples);
+            
+            // Store in page manager
+            pageManager.storeSoundData(globalIndex, {
+              index: globalIndex,
+              name: originalName,
               samples,
               sampleRate: 48000,
               duration: samples.length / 48000,
@@ -172,107 +221,229 @@ export class ProjectIO {
       await Promise.all(soundPromises);
     }
     
-    // Apply state using legacy method, with remapped indices
-    this.applyStateWithRemap(state, indexRemap);
+    // Apply pad settings
+    this.applyKeyPageSettings(keyPageFile, pageStart);
+    
+    // Reload page to connect everything
+    pageManager.reloadActivePage();
   }
   
   /**
-   * Import multi-page project (version 2)
+   * Apply .keypage pad settings to active page
    */
-  private async importMultiPageProject(zip: JSZip, project: MultiPageProject): Promise<void> {
-    // Apply global settings first
-    bpmController.importState({
-      bpm: project.bpm,
-      metronome: project.metronome,
-    });
-    audioEngine.setMasterVolume(project.masterVolume);
+  private applyKeyPageSettings(keyPageFile: KeyPageFile, pageStart: number): void {
+    // Apply modulation preset
+    modeManager.setModulationPreset(keyPageFile.modulationPreset);
     
-    // Load sounds for each page
-    const soundsFolder = zip.folder(this.soundsFolder);
-    
-    for (const pageState of project.pages) {
-      const pageFolder = soundsFolder?.folder(`page_${pageState.index}`);
+    // Apply pad settings
+    for (const pad of keyPageFile.pads) {
+      // Remap sound index to global range
+      const globalSoundIndex = pad.hasSound ? (pageStart + pad.soundIndex) : 0;
       
-      if (pageFolder) {
-        const soundPromises: Promise<{index: number; name: string; samples: Float32Array} | null>[] = [];
-        
-        pageFolder.forEach((relativePath, file) => {
-          if (file.dir) return;
-          
-          const promise = (async () => {
-            const arrayBuffer = await file.async('arraybuffer');
-            const samples = await this.wavToFloat32(arrayBuffer);
-            
-            // Parse filename: "{soundIndex}_{originalName}.wav"
-            const match = relativePath.match(/^(\d+)_(.+)\.wav$/);
-            if (match) {
-              const soundIndex = parseInt(match[1]);
-              const originalName = match[2] + '.wav';
-              return { index: soundIndex, name: originalName, samples };
-            }
-            return null;
-          })();
-          
-          soundPromises.push(promise);
-        });
-        
-        const loadedSounds = await Promise.all(soundPromises);
-        
-        // Store sounds in project for this page
-        for (const sound of loadedSounds) {
-          if (sound) {
-            // Temporarily store - will be loaded when page is activated
-            const soundData: SoundData = {
-              index: sound.index,
-              name: sound.name,
-              samples: sound.samples,
-              sampleRate: 48000,
-              duration: sound.samples.length / 48000,
-            };
-            
-            // Store in the page state before import
-            pageState.soundFiles[sound.index] = sound.name;
-          }
-        }
+      // Build key mapping
+      const mapping: KeyMapping = {
+        keyCode: pad.keyCode,
+        soundIndex: globalSoundIndex,
+        soundName: pad.soundFileName,
+        mode: pad.playbackMode,
+        overlapMode: pad.overlapMode,
+        groupId: pad.overlapGroupId,
+        volume: pad.volume,
+        pitchSemitones: pad.pitchSemitones,
+        modulationEnabled: pad.modulationEnabled,
+        hasSound: pad.hasSound,
+      };
+      
+      if (pad.hasSound) {
+        // Store key-sound association
+        pageManager.setKeySoundIndex(pad.keyCode, globalSoundIndex);
+        // Store mapping
+        pageManager.setKeyMapping(pad.keyCode, mapping);
+        // Apply to mode manager and audio engine
+        modeManager.setMapping(mapping);
+      }
+      
+      // Set page jump target if configured
+      if (pad.pageJumpTarget >= 0) {
+        pageManager.setPadPageJump(pad.keyCode, pad.pageJumpTarget);
       }
     }
     
-    // Import pages into page manager
-    pageManager.importProject(project);
+    // Rename page if provided
+    if (keyPageFile.pageName) {
+      pageManager.renamePage(pageManager.getActivePageIndex(), keyPageFile.pageName);
+    }
     
-    // Now load sounds for all pages into audio engine
-    for (const pageState of project.pages) {
-      const pageFolder = soundsFolder?.folder(`page_${pageState.index}`);
+    // Save state
+    pageManager.saveCurrentPageState();
+  }
+  
+  // ==========================================================================
+  // .KEYLOOP EXPORT (Multi-Page Project)
+  // ==========================================================================
+  
+  /**
+   * Export entire project as .keyloop file
+   * @param projectName Optional project name
+   */
+  async exportProject(projectName: string = 'project'): Promise<void> {
+    // Save current state first
+    pageManager.saveCurrentPageState();
+    
+    const zip = new JSZip();
+    const pages = pageManager.getAllPages();
+    const pageEntries: KeyLoopPageEntry[] = [];
+    
+    // Export each page as embedded .keypage
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const pageId = generatePageId();
+      const filename = `page_${i}.keypage`;
       
+      // Create page folder
+      const pageFolder = zip.folder(filename);
       if (pageFolder) {
+        // Build page manifest
+        const keyPageFile = this.buildKeyPageManifest(page);
+        keyPageFile.pageId = pageId; // Use consistent ID
+        
+        pageFolder.file(KEYPAGE_MANIFEST, JSON.stringify(keyPageFile, null, 2));
+        
+        // Add sounds
+        const soundsFolder = pageFolder.folder(SOUNDS_FOLDER);
+        if (soundsFolder) {
+          for (const [soundIndex, sound] of page.sounds) {
+            const wavData = this.float32ToWav(sound.samples, sound.sampleRate);
+            const localIndex = soundIndex % 64;
+            soundsFolder.file(`${localIndex}_${sound.name.replace(/\.[^/.]+$/, '.wav')}`, wavData);
+          }
+        }
+      }
+      
+      // Add to page entries
+      pageEntries.push({
+        pageId,
+        filename,
+        orderIndex: i,
+      });
+    }
+    
+    // Build project manifest
+    const bpmState = bpmController.exportState();
+    const keyLoopFile: KeyLoopFile = {
+      format: 'keyloop',
+      schemaVersion: 1,
+      bpm: bpmState.bpm,
+      masterVolume: audioEngine.getMasterVolume(),
+      metronome: bpmState.metronome,
+      activePageIndex: pageManager.getActivePageIndex(),
+      pageCount: pages.length,
+      pages: pageEntries,
+    };
+    
+    // Add project manifest
+    zip.file(KEYLOOP_MANIFEST, JSON.stringify(keyLoopFile, null, 2));
+    
+    // Generate and download
+    const blob = await zip.generateAsync({ type: 'blob' });
+    this.downloadBlob(blob, `${projectName}${KEYLOOP_EXTENSION}`);
+  }
+  
+  // ==========================================================================
+  // .KEYLOOP IMPORT (Multi-Page Project)
+  // ==========================================================================
+  
+  /**
+   * Import a .keyloop project file
+   * Replaces entire project state with imported content
+   */
+  async importProject(file: File): Promise<void> {
+    const zip = await JSZip.loadAsync(file);
+    
+    // Read project manifest
+    const manifestFile = zip.file(KEYLOOP_MANIFEST);
+    if (!manifestFile) {
+      throw new Error('Invalid .keyloop file: missing project manifest');
+    }
+    
+    const manifestText = await manifestFile.async('text');
+    const keyLoopFile = JSON.parse(manifestText) as KeyLoopFile;
+    
+    // Validate format
+    if (keyLoopFile.format !== 'keyloop') {
+      throw new Error('Invalid file format: expected .keyloop');
+    }
+    
+    // Apply global settings
+    bpmController.importState({
+      bpm: keyLoopFile.bpm,
+      metronome: keyLoopFile.metronome,
+    });
+    audioEngine.setMasterVolume(keyLoopFile.masterVolume);
+    
+    // Clear and reset page manager
+    pageManager.initialize();
+    
+    // Sort pages by order index
+    const sortedPages = [...keyLoopFile.pages].sort((a, b) => a.orderIndex - b.orderIndex);
+    
+    // Import each page
+    for (const pageEntry of sortedPages) {
+      // Create page slot
+      const pageIndex = pageEntry.orderIndex;
+      while (pageManager.getAllPages().length <= pageIndex) {
+        pageManager.createPage();
+      }
+      
+      // Switch to this page
+      pageManager.switchToPage(pageIndex);
+      pageManager.clearActivePage();
+      
+      // Get page folder
+      const pageFolder = zip.folder(pageEntry.filename);
+      if (!pageFolder) {
+        console.warn(`Missing page folder: ${pageEntry.filename}`);
+        continue;
+      }
+      
+      // Read page manifest
+      const pageManifestFile = pageFolder.file(KEYPAGE_MANIFEST);
+      if (!pageManifestFile) {
+        console.warn(`Missing page manifest in: ${pageEntry.filename}`);
+        continue;
+      }
+      
+      const pageManifestText = await pageManifestFile.async('text');
+      const keyPageFile = JSON.parse(pageManifestText) as KeyPageFile;
+      
+      const pageStart = pageIndex * 64;
+      
+      // Load sounds
+      const soundsFolder = pageFolder.folder(SOUNDS_FOLDER);
+      if (soundsFolder) {
         const soundPromises: Promise<void>[] = [];
         
-        pageFolder.forEach((relativePath, file) => {
-          if (file.dir) return;
+        soundsFolder.forEach((relativePath, zipFile) => {
+          if (zipFile.dir) return;
           
           const promise = (async () => {
-            const arrayBuffer = await file.async('arraybuffer');
+            const arrayBuffer = await zipFile.async('arraybuffer');
             const samples = await this.wavToFloat32(arrayBuffer);
             
             const match = relativePath.match(/^(\d+)_(.+)\.wav$/);
             if (match) {
-              const soundIndex = parseInt(match[1]);
-              const originalName = match[2];
+              const localIndex = parseInt(match[1]);
+              const originalName = match[2] + '.wav';
+              const globalIndex = pageStart + localIndex;
               
-              // Load sound into audio engine
-              audioEngine.loadSoundFromSamples(soundIndex, originalName, samples);
-              
-              // Store in page manager
-              const page = pageManager.getAllPages()[pageState.index];
-              if (page) {
-                page.sounds.set(soundIndex, {
-                  index: soundIndex,
-                  name: originalName,
-                  samples,
-                  sampleRate: 48000,
-                  duration: samples.length / 48000,
-                });
-              }
+              audioEngine.loadSoundFromSamples(globalIndex, originalName, samples);
+              pageManager.storeSoundData(globalIndex, {
+                index: globalIndex,
+                name: originalName,
+                samples,
+                sampleRate: 48000,
+                duration: samples.length / 48000,
+              });
             }
           })();
           
@@ -281,97 +452,38 @@ export class ProjectIO {
         
         await Promise.all(soundPromises);
       }
+      
+      // Apply pad settings
+      this.applyKeyPageSettings(keyPageFile, pageStart);
+    }
+    
+    // Switch to the originally active page
+    pageManager.switchToPage(keyLoopFile.activePageIndex);
+  }
+  
+  // ==========================================================================
+  // FILE DETECTION & UNIFIED IMPORT
+  // ==========================================================================
+  
+  /**
+   * Detect file type and import appropriately
+   * @param file The file to import (.keypage or .keyloop)
+   */
+  async importFile(file: File): Promise<void> {
+    const fileName = file.name.toLowerCase();
+    
+    if (fileName.endsWith(KEYPAGE_EXTENSION)) {
+      await this.importPage(file);
+    } else if (fileName.endsWith(KEYLOOP_EXTENSION)) {
+      await this.importProject(file);
+    } else {
+      throw new Error(`Unsupported file type. Use ${KEYPAGE_EXTENSION} or ${KEYLOOP_EXTENSION}`);
     }
   }
   
-  /**
-   * Apply imported state with remapped sound indices
-   */
-  private applyStateWithRemap(state: ProjectState, indexRemap: Map<number, number>): void {
-    // Apply BPM and metronome
-    bpmController.importState({
-      bpm: state.bpm,
-      metronome: state.metronome,
-    });
-    
-    // Apply master volume
-    audioEngine.setMasterVolume(state.masterVolume);
-    
-    // Apply modulation preset
-    modeManager.setModulationPreset(state.modulationPreset);
-    
-    // Apply key mappings with remapped sound indices
-    const remappedMappings = state.keyMappings.map(mapping => {
-      const newSoundIndex = indexRemap.get(mapping.soundIndex) ?? mapping.soundIndex;
-      return {
-        ...mapping,
-        soundIndex: newSoundIndex,
-      };
-    });
-    
-    // === Apply mappings to active page (stores in page state) ===
-    for (const mapping of remappedMappings) {
-      if (mapping.hasSound) {
-        // Store key-sound association in page
-        pageManager.setKeySoundIndex(mapping.keyCode, mapping.soundIndex);
-        // Store full mapping in page
-        pageManager.setKeyMapping(mapping.keyCode, mapping);
-        // Apply to mode manager and audio engine
-        modeManager.setMapping(mapping);
-      }
-    }
-    
-    // Save the imported state to the page
-    pageManager.saveCurrentPageState();
-    
-    // === Reload page to ensure everything is properly connected ===
-    pageManager.reloadActivePage();
-  }
-  
-  /**
-   * Collect current state for export (legacy compatibility)
-   */
-  private collectState(): ProjectState {
-    const bpmState = bpmController.exportState();
-    const mappings = modeManager.exportMappings();
-    
-    // Build sound files map
-    const soundFiles: { [index: number]: string } = {};
-    const sounds = audioEngine.getAllLoadedSounds();
-    for (const sound of sounds) {
-      soundFiles[sound.index] = sound.name;
-    }
-    
-    return {
-      version: 1,
-      bpm: bpmState.bpm,
-      masterVolume: audioEngine.getMasterVolume(),
-      metronome: bpmState.metronome,
-      modulationPreset: modeManager.getModulationPreset(),
-      keyMappings: mappings,
-      soundFiles,
-    };
-  }
-  
-  /**
-   * Apply imported state
-   */
-  private applyState(state: ProjectState): void {
-    // Apply BPM and metronome
-    bpmController.importState({
-      bpm: state.bpm,
-      metronome: state.metronome,
-    });
-    
-    // Apply master volume
-    audioEngine.setMasterVolume(state.masterVolume);
-    
-    // Apply modulation preset
-    modeManager.setModulationPreset(state.modulationPreset);
-    
-    // Apply key mappings
-    modeManager.importMappings(state.keyMappings);
-  }
+  // ==========================================================================
+  // UTILITY METHODS
+  // ==========================================================================
   
   /**
    * Convert Float32Array audio to WAV format
@@ -388,15 +500,14 @@ export class ProjectIO {
     const view = new DataView(buffer);
     
     // Write WAV header
-    // "RIFF" chunk descriptor
     this.writeString(view, 0, 'RIFF');
     view.setUint32(4, bufferSize - 8, true);
     this.writeString(view, 8, 'WAVE');
     
     // "fmt " sub-chunk
     this.writeString(view, 12, 'fmt ');
-    view.setUint32(16, 16, true); // Subchunk1Size (PCM)
-    view.setUint16(20, 1, true); // AudioFormat (PCM)
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
     view.setUint16(22, numChannels, true);
     view.setUint32(24, sampleRate, true);
     view.setUint32(28, byteRate, true);
@@ -410,7 +521,6 @@ export class ProjectIO {
     // Write audio data
     let offset = 44;
     for (let i = 0; i < samples.length; i++) {
-      // Convert float to 16-bit integer
       const sample = Math.max(-1, Math.min(1, samples[i]));
       const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
       view.setInt16(offset, intSample, true);
@@ -424,14 +534,11 @@ export class ProjectIO {
    * Convert WAV ArrayBuffer to Float32Array
    */
   private async wavToFloat32(arrayBuffer: ArrayBuffer): Promise<Float32Array> {
-    // Use OfflineAudioContext to decode
     const audioContext = new OfflineAudioContext(1, 1, 48000);
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     
-    // Get mono data
     const samples = new Float32Array(audioBuffer.length);
-    const channelData = audioBuffer.getChannelData(0);
-    samples.set(channelData);
+    samples.set(audioBuffer.getChannelData(0));
     
     return samples;
   }
@@ -460,12 +567,38 @@ export class ProjectIO {
   }
   
   /**
-   * Create file input for importing
+   * Create file input for importing .keypage files
    */
-  createImportInput(): HTMLInputElement {
+  createPageImportInput(): HTMLInputElement {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = this.extension;
+    input.accept = KEYPAGE_EXTENSION;
+    
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (file) {
+        try {
+          await this.importPage(file);
+          window.dispatchEvent(new CustomEvent('qeyloop:pageLoaded'));
+        } catch (error) {
+          console.error('Failed to import page:', error);
+          window.dispatchEvent(new CustomEvent('qeyloop:pageError', {
+            detail: { error: (error as Error).message }
+          }));
+        }
+      }
+    });
+    
+    return input;
+  }
+  
+  /**
+   * Create file input for importing .keyloop projects
+   */
+  createProjectImportInput(): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = KEYLOOP_EXTENSION;
     
     input.addEventListener('change', async () => {
       const file = input.files?.[0];
@@ -483,6 +616,43 @@ export class ProjectIO {
     });
     
     return input;
+  }
+  
+  /**
+   * Create unified file input that accepts both formats
+   */
+  createImportInput(): HTMLInputElement {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = `${KEYPAGE_EXTENSION},${KEYLOOP_EXTENSION}`;
+    
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (file) {
+        try {
+          await this.importFile(file);
+          window.dispatchEvent(new CustomEvent('qeyloop:projectLoaded'));
+        } catch (error) {
+          console.error('Failed to import file:', error);
+          window.dispatchEvent(new CustomEvent('qeyloop:projectError', {
+            detail: { error: (error as Error).message }
+          }));
+        }
+      }
+    });
+    
+    return input;
+  }
+  
+  /**
+   * Get file extensions for UI
+   */
+  getPageExtension(): string {
+    return KEYPAGE_EXTENSION;
+  }
+  
+  getProjectExtension(): string {
+    return KEYLOOP_EXTENSION;
   }
 }
 

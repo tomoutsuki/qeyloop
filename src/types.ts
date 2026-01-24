@@ -141,6 +141,105 @@ export function createDefaultProjectState(): ProjectState {
 }
 
 // ============================================================================
+// NEW FILE FORMAT SCHEMAS (.keypage / .keyloop)
+// ============================================================================
+
+/**
+ * Per-pad settings saved in .keypage file
+ * Contains ALL pad parameters for complete state restoration
+ */
+export interface PadSettings {
+  /** Key code (from KeyboardEvent.keyCode) */
+  keyCode: number;
+  /** Volume (0.0 to 1.0) */
+  volume: number;
+  /** Pitch offset in semitones (-24 to +24) */
+  pitchSemitones: number;
+  /** Playback mode (0=SingleShot, 1=Loop) */
+  playbackMode: PlaybackMode;
+  /** Whether modulation is enabled */
+  modulationEnabled: boolean;
+  /** Overlap mode (0=Polyphonic, 1=Monophonic) */
+  overlapMode: OverlapMode;
+  /** Overlap group ID (0-255) */
+  overlapGroupId: number;
+  /** Page jump target (-1 = none, 0-9 = target page) */
+  pageJumpTarget: number;
+  /** Sound file name (empty if no sound) */
+  soundFileName: string;
+  /** Sound index within this page (0-63) */
+  soundIndex: number;
+  /** Whether this pad has a sound assigned */
+  hasSound: boolean;
+}
+
+/**
+ * .keypage file format - represents exactly one page
+ * This is a standalone file that can be imported independently
+ */
+export interface KeyPageFile {
+  /** Format identifier */
+  format: 'keypage';
+  /** Schema version for future compatibility */
+  schemaVersion: 1;
+  /** Unique page identifier (UUID) */
+  pageId: string;
+  /** User-defined page name */
+  pageName: string;
+  /** Modulation preset for this page */
+  modulationPreset: ModulationPreset;
+  /** All pad settings (only pads with data) */
+  pads: PadSettings[];
+  /** Sound file references (soundIndex -> filename) */
+  soundFiles: { [soundIndex: number]: string };
+}
+
+/**
+ * Page reference within a .keyloop file
+ */
+export interface KeyLoopPageEntry {
+  /** Page identifier (matches pageId in .keypage) */
+  pageId: string;
+  /** Filename within the ZIP (e.g., "page_0.keypage") */
+  filename: string;
+  /** Order index (0 = first page) */
+  orderIndex: number;
+}
+
+/**
+ * .keyloop file format - represents a multi-page project
+ * This is a container (ZIP) holding multiple .keypage files
+ */
+export interface KeyLoopFile {
+  /** Format identifier */
+  format: 'keyloop';
+  /** Schema version for future compatibility */
+  schemaVersion: 1;
+  /** Global BPM (shared across all pages) */
+  bpm: number;
+  /** Master volume (shared across all pages) */
+  masterVolume: number;
+  /** Metronome settings (shared across all pages) */
+  metronome: {
+    enabled: boolean;
+    volume: number;
+  };
+  /** Active page index when saved */
+  activePageIndex: number;
+  /** Total page count */
+  pageCount: number;
+  /** Page references (ordered) */
+  pages: KeyLoopPageEntry[];
+}
+
+/**
+ * Generate a unique page ID
+ */
+export function generatePageId(): string {
+  return crypto.randomUUID();
+}
+
+// ============================================================================
 // AUDIO ENGINE INTERFACE
 // ============================================================================
 

@@ -448,24 +448,37 @@ export class ControlPanel {
   
   /**
    * Create project controls
+   * Updated for new .keypage / .keyloop file system
    */
   private createProjectControls(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'control-row project-controls';
     
-    // Export button
-    const exportBtn = document.createElement('button');
-    exportBtn.textContent = '💾 Export';
-    exportBtn.className = 'btn';
-    exportBtn.addEventListener('click', () => {
+    // === PAGE EXPORT (.keypage) ===
+    const exportPageBtn = document.createElement('button');
+    exportPageBtn.textContent = '📄 Export Page';
+    exportPageBtn.className = 'btn';
+    exportPageBtn.title = 'Export current page as .keypage file';
+    exportPageBtn.addEventListener('click', () => {
+      projectIO.exportPage();
+    });
+    container.appendChild(exportPageBtn);
+    
+    // === PROJECT EXPORT (.keyloop) ===
+    const exportProjectBtn = document.createElement('button');
+    exportProjectBtn.textContent = '💾 Export All';
+    exportProjectBtn.className = 'btn';
+    exportProjectBtn.title = 'Export all pages as .keyloop project';
+    exportProjectBtn.addEventListener('click', () => {
       projectIO.exportProject('qeyloop-project');
     });
-    container.appendChild(exportBtn);
+    container.appendChild(exportProjectBtn);
     
-    // Import button
+    // === UNIFIED IMPORT (both formats) ===
     const importBtn = document.createElement('button');
     importBtn.textContent = '📂 Import';
     importBtn.className = 'btn';
+    importBtn.title = 'Import .keypage (single page) or .keyloop (full project)';
     
     const importInput = projectIO.createImportInput();
     container.appendChild(importInput);
