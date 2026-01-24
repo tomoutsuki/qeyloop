@@ -121,7 +121,12 @@ export class HistoryManager {
           ...pageSound,
           samples: new Float32Array(pageSound.samples),
         };
+        console.log(`[History] Snapshot keyCode ${keyCode}: captured sound ${sound.name}, index ${mapping.soundIndex}`);
+      } else {
+        console.log(`[History] Snapshot keyCode ${keyCode}: hasSound=true but pageSound not found for index ${mapping.soundIndex}`);
       }
+    } else {
+      console.log(`[History] Snapshot keyCode ${keyCode}: no sound (hasSound=${mapping?.hasSound})`);
     }
     
     // Get page jump target
@@ -250,6 +255,8 @@ export class HistoryManager {
     if (!page) return;
     
     for (const [keyCode, snapshot] of states) {
+      console.log(`[History] Restoring keyCode ${keyCode}, hasSound: ${snapshot.mapping.hasSound}, sound data exists: ${snapshot.sound !== null}`);
+      
       // First, clear any existing sound at this key
       const existingMapping = modeManager.getMapping(keyCode);
       if (existingMapping?.hasSound) {
@@ -262,6 +269,8 @@ export class HistoryManager {
       
       // Restore sound data if present in snapshot
       if (snapshot.sound && snapshot.mapping.hasSound) {
+        console.log(`[History] Restoring sound: ${snapshot.sound.name}`);
+        
         // Allocate NEW sound index to avoid conflicts
         const newSoundIndex = pageManager.incrementNextSoundIndex();
         
@@ -292,6 +301,8 @@ export class HistoryManager {
         modeManager.setMapping(restoredMapping);
         pageManager.setKeyMapping(keyCode, restoredMapping);
       } else {
+        console.log(`[History] Clearing sound (no sound in snapshot)`);
+        
         // No sound in snapshot - restore mapping without sound
         // Use soundIndex -1 to explicitly signal no sound to audio engine
         const restoredMapping = {

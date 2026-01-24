@@ -312,9 +312,24 @@ export class CommandExecutor {
     const keyCode = this.selectedPadKeyCode;
     const content = clipboardManager.getContent();
     
-    // Record state before paste
-    const beforeState = historyManager.createPadSnapshot(keyCode);
+    // Check if this is a cut operation (to restore source on undo)
+    const wasCut = clipboardManager.wasCut();
+    const sourceKeyCode = clipboardManager.getSourceKeyCode();
     
+    // Record state before paste
+    const beforeStates: any[] = [];
+    const afterStates: any[] = [];
+    const affectedPads: number[] = [keyCode];
+    
+    beforeStates.push(historyManager.createPadSnapshot(keyCode));
+    
+    // If pasting from a cut, also capture the source pad for undo
+    if (wasCut && sourceKeyCode !== null && sourceKeyCode !== keyCode) {
+      beforeStates.push(historyManager.createPadSnapshot(sourceKeyCode));
+      affectedPads.push(sourceKeyCode);
+    }
+    
+    // Perform the paste
     if (content.type === ClipboardType.AudioOnly) {
       this.pasteAudio(keyCode, content.sound);
     } else if (content.type === ClipboardType.FullPad) {
@@ -322,13 +337,19 @@ export class CommandExecutor {
     }
     
     // Record state after paste
-    const afterState = historyManager.createPadSnapshot(keyCode);
+    afterStates.push(historyManager.createPadSnapshot(keyCode));
+    
+    // If it was a cut, the source pad is now empty (already cut), capture that
+    if (wasCut && sourceKeyCode !== null && sourceKeyCode !== keyCode) {
+      afterStates.push(historyManager.createPadSnapshot(sourceKeyCode));
+    }
+    
     historyManager.recordAction(
       HistoryActionType.Paste,
       `Paste to pad`,
-      [keyCode],
-      [beforeState],
-      [afterState]
+      affectedPads,
+      beforeStates,
+      afterStates
     );
     
     // Save page state
