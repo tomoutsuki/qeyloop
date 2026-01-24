@@ -203,6 +203,9 @@ export class CommandExecutor {
       [afterState]
     );
     
+    // Save page state
+    pageManager.saveCurrentPageState();
+    
     this.onRefreshUI?.();
     this.showStatus('Audio cut');
     return true;
@@ -280,6 +283,9 @@ export class CommandExecutor {
       [afterState]
     );
     
+    // Save page state
+    pageManager.saveCurrentPageState();
+    
     this.onRefreshUI?.();
     this.showStatus('Pad cut');
     return true;
@@ -325,6 +331,9 @@ export class CommandExecutor {
       [afterState]
     );
     
+    // Save page state
+    pageManager.saveCurrentPageState();
+    
     // Clear clipboard if it was a cut
     clipboardManager.clearAfterPaste();
     
@@ -337,6 +346,19 @@ export class CommandExecutor {
    * Paste audio only to a pad
    */
   private pasteAudio(keyCode: number, sound: SoundData): void {
+    const page = pageManager.getActivePage();
+    if (!page) return;
+    
+    // Clear any existing sound at destination pad first
+    const existingMapping = modeManager.getMapping(keyCode);
+    if (existingMapping?.hasSound) {
+      const existingIndex = pageManager.getKeySoundIndex(keyCode);
+      if (existingIndex !== undefined) {
+        page.sounds.delete(existingIndex);
+        page.keySoundIndices.delete(keyCode);
+      }
+    }
+    
     // Allocate new sound slot
     const soundIndex = pageManager.incrementNextSoundIndex();
     
@@ -365,9 +387,21 @@ export class CommandExecutor {
     const page = pageManager.getActivePage();
     if (!page) return;
     
+    // Clear any existing sound at destination pad first
+    const existingMapping = modeManager.getMapping(keyCode);
+    if (existingMapping?.hasSound) {
+      const existingIndex = pageManager.getKeySoundIndex(keyCode);
+      if (existingIndex !== undefined) {
+        page.sounds.delete(existingIndex);
+        page.keySoundIndices.delete(keyCode);
+      }
+    }
+    
     // Handle sound
     let soundIndex = 0;
-    if (content.sound) {
+    let hasSound = false;
+    
+    if (content.sound && content.settings.hasSound) {
       soundIndex = pageManager.incrementNextSoundIndex();
       
       const newSound: SoundData = {
@@ -379,20 +413,25 @@ export class CommandExecutor {
       audioEngine.loadSoundFromSamples(soundIndex, newSound.name, newSound.samples);
       pageManager.storeSoundData(soundIndex, newSound);
       pageManager.setKeySoundIndex(keyCode, soundIndex);
+      hasSound = true;
+    } else {
+      // No sound to paste - clear the keyCode's sound association
+      page.keySoundIndices.delete(keyCode);
+      soundIndex = -1;
     }
     
     // Build new mapping
     const mapping = {
       keyCode,
       soundIndex,
-      soundName: content.settings.soundName,
+      soundName: hasSound ? content.settings.soundName : '',
       mode: content.settings.mode,
       overlapMode: content.settings.overlapMode,
       groupId: content.settings.groupId,
       volume: content.settings.volume,
       pitchSemitones: content.settings.pitchSemitones,
       modulationEnabled: content.settings.modulationEnabled,
-      hasSound: content.settings.hasSound,
+      hasSound,
     };
     
     // Apply mapping
@@ -499,7 +538,7 @@ export class CommandExecutor {
     const newMapping = {
       ...mapping,
       hasSound: false,
-      soundIndex: 0,
+      soundIndex: -1,
       soundName: '',
     };
     

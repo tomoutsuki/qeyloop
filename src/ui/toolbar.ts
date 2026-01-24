@@ -149,6 +149,12 @@ export class Toolbar {
           { type: 'separator' },
           { 
             type: 'item', 
+            label: 'GitHub Repository', 
+            action: () => window.open('https://github.com/tomoutsuki/qeyloop', '_blank'),
+          },
+          { type: 'separator' },
+          { 
+            type: 'item', 
             label: 'About Qeyloop', 
             action: () => this.showAbout(),
           },

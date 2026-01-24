@@ -250,31 +250,59 @@ export class HistoryManager {
     if (!page) return;
     
     for (const [keyCode, snapshot] of states) {
-      // Restore mapping
-      modeManager.setMapping(snapshot.mapping);
-      pageManager.setKeyMapping(keyCode, snapshot.mapping);
-      
-      // Restore sound data if present
-      if (snapshot.sound) {
-        const soundIndex = snapshot.mapping.soundIndex;
-        
-        // Store in page manager
-        pageManager.storeSoundData(soundIndex, snapshot.sound);
-        pageManager.setKeySoundIndex(keyCode, soundIndex);
-        
-        // Load into audio engine
-        audioEngine.loadSoundFromSamples(
-          soundIndex,
-          snapshot.sound.name,
-          snapshot.sound.samples
-        );
-      } else if (snapshot.mapping.hasSound === false) {
-        // Clear sound association
+      // First, clear any existing sound at this key
+      const existingMapping = modeManager.getMapping(keyCode);
+      if (existingMapping?.hasSound) {
         const existingIndex = pageManager.getKeySoundIndex(keyCode);
         if (existingIndex !== undefined) {
           page.sounds.delete(existingIndex);
           page.keySoundIndices.delete(keyCode);
         }
+      }
+      
+      // Restore sound data if present in snapshot
+      if (snapshot.sound && snapshot.mapping.hasSound) {
+        // Allocate NEW sound index to avoid conflicts
+        const newSoundIndex = pageManager.incrementNextSoundIndex();
+        
+        // Clone sound with new index
+        const restoredSound: SoundData = {
+          ...snapshot.sound,
+          index: newSoundIndex,
+          samples: new Float32Array(snapshot.sound.samples),
+        };
+        
+        // Store in page manager
+        pageManager.storeSoundData(newSoundIndex, restoredSound);
+        pageManager.setKeySoundIndex(keyCode, newSoundIndex);
+        
+        // Load into audio engine
+        audioEngine.loadSoundFromSamples(
+          newSoundIndex,
+          restoredSound.name,
+          restoredSound.samples
+        );
+        
+        // Update mapping with new sound index
+        const restoredMapping = {
+          ...snapshot.mapping,
+          soundIndex: newSoundIndex,
+        };
+        
+        modeManager.setMapping(restoredMapping);
+        pageManager.setKeyMapping(keyCode, restoredMapping);
+      } else {
+        // No sound in snapshot - restore mapping without sound
+        // Use soundIndex -1 to explicitly signal no sound to audio engine
+        const restoredMapping = {
+          ...snapshot.mapping,
+          hasSound: false,
+          soundIndex: -1,
+          soundName: '',
+        };
+        
+        modeManager.setMapping(restoredMapping);
+        pageManager.setKeyMapping(keyCode, restoredMapping);
       }
       
       // Restore page jump target

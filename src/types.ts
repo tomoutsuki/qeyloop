@@ -69,7 +69,7 @@ export interface KeyMapping {
 export function createDefaultKeyMapping(keyCode: number): KeyMapping {
   return {
     keyCode,
-    soundIndex: 0,
+    soundIndex: -1,
     soundName: '',
     mode: PlaybackMode.SingleShot,
     overlapMode: OverlapMode.Polyphonic,
