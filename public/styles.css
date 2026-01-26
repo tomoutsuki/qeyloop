@@ -114,10 +114,8 @@ body {
   justify-content: space-between;
 }
 
-.header h1 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
+.header-logo {
+  height: 28px;
 }
 
 /* ============================================================================
@@ -228,6 +226,7 @@ body {
 .toolbar-left {
   display: flex;
   gap: 0;
+  align-items: center;
   flex-shrink: 0;
 }
 

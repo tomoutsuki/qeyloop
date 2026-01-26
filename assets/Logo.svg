@@ -1,0 +1,35 @@
+<svg width="543" height="701" viewBox="0 0 543 701" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_1_50)">
+<mask id="mask0_1_50" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="-1" y="0" width="545" height="702">
+<mask id="mask1_1_50" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="45" y="0" width="452" height="225">
+<rect x="45" width="452" height="225" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask1_1_50)">
+<circle cx="270" cy="225" r="162.5" stroke="black" stroke-width="125"/>
+</g>
+<path d="M430.253 314.75L322 221L538.506 221L430.253 314.75Z" fill="black"/>
+<mask id="mask2_1_50" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="40" y="475" width="452" height="225">
+<rect x="492" y="700" width="452" height="225" transform="rotate(-180 492 700)" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask2_1_50)">
+<circle cx="267" cy="475" r="162.5" transform="rotate(-180 267 475)" stroke="black" stroke-width="125"/>
+</g>
+<path d="M108 383L216.253 476.75H-0.253174L108 383Z" fill="black"/>
+<rect x="367" y="350" width="125" height="125" fill="black"/>
+<rect x="45" y="225" width="125" height="125" fill="black"/>
+<rect x="318" y="564.388" width="125" height="193.553" transform="rotate(-45 318 564.388)" fill="black"/>
+</mask>
+<g mask="url(#mask0_1_50)">
+<rect x="-4" width="547" height="701" fill="url(#paint0_linear_1_50)"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_1_50" x1="269.5" y1="0" x2="269.5" y2="701" gradientUnits="userSpaceOnUse">
+<stop stop-color="#5CD5CF"/>
+<stop offset="1" stop-color="#A47DDA"/>
+</linearGradient>
+<clipPath id="clip0_1_50">
+<rect width="543" height="701" fill="white"/>
+</clipPath>
+</defs>
+</svg>
