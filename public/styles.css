@@ -112,10 +112,111 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
-.header-logo {
-  height: 28px;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-logo-icon {
+  height: 32px;
+}
+
+.header-logo-text {
+  height: 24px;
+}
+
+.header-transport {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.header-label {
+  color: #aaa;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.header-input {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 3px;
+}
+
+.header-input:focus {
+  outline: none;
+  border-color: #0066cc;
+}
+
+.header-bpm {
+  width: 60px;
+  text-align: center;
+}
+
+.header-slider {
+  width: 100px;
+  height: 20px;
+}
+
+.header-btn {
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.header-btn:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.header-btn-small {
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  min-width: 32px;
+}
+
+.header-btn-small:hover {
+  background: #3a3a3a;
+  border-color: #555;
+}
+
+.header-btn.active {
+  background: #0066cc;
+  border-color: #0088ff;
+  color: #fff;
+}
+
+.header-panic {
+  background: #661100;
+  border-color: #882200;
+  color: #ff8866;
+  font-weight: 600;
+}
+
+.header-panic:hover {
+  background: #882200;
+  border-color: #aa3300;
+  color: #ffaa88;
 }
 
 /* ============================================================================

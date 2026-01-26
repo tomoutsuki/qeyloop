@@ -210,69 +210,6 @@ export class Toolbar {
     
     this.container.appendChild(leftSection);
     
-    // Center section: Transport controls
-    const centerSection = document.createElement('div');
-    centerSection.className = 'toolbar-center';
-    
-    // BPM control
-    const bpmLabel = document.createElement('span');
-    bpmLabel.textContent = 'BPM:';
-    bpmLabel.className = 'toolbar-label';
-    centerSection.appendChild(bpmLabel);
-    
-    this.bpmInput = document.createElement('input');
-    this.bpmInput.type = 'number';
-    this.bpmInput.min = '20';
-    this.bpmInput.max = '300';
-    this.bpmInput.value = String(bpmController.getBpm());
-    this.bpmInput.className = 'toolbar-input toolbar-bpm';
-    this.bpmInput.style.width = '60px';
-    centerSection.appendChild(this.bpmInput);
-    
-    // BPM buttons
-    const bpmHalfBtn = document.createElement('button');
-    bpmHalfBtn.textContent = '÷2';
-    bpmHalfBtn.className = 'toolbar-btn-small';
-    bpmHalfBtn.title = 'Halve BPM';
-    centerSection.appendChild(bpmHalfBtn);
-    
-    const bpmDoubleBtn = document.createElement('button');
-    bpmDoubleBtn.textContent = '×2';
-    bpmDoubleBtn.className = 'toolbar-btn-small';
-    bpmDoubleBtn.title = 'Double BPM';
-    centerSection.appendChild(bpmDoubleBtn);
-    
-    // Metronome button
-    this.metronomeBtn = document.createElement('button');
-    this.metronomeBtn.textContent = '🔇';
-    this.metronomeBtn.className = 'toolbar-btn';
-    this.metronomeBtn.title = 'Toggle Metronome';
-    centerSection.appendChild(this.metronomeBtn);
-    
-    // Master volume
-    const volumeLabel = document.createElement('span');
-    volumeLabel.textContent = '🔊';
-    volumeLabel.className = 'toolbar-label';
-    centerSection.appendChild(volumeLabel);
-    
-    this.masterVolumeSlider = document.createElement('input');
-    this.masterVolumeSlider.type = 'range';
-    this.masterVolumeSlider.min = '0';
-    this.masterVolumeSlider.max = '100';
-    this.masterVolumeSlider.value = '100';
-    this.masterVolumeSlider.className = 'toolbar-slider';
-    this.masterVolumeSlider.style.width = '100px';
-    centerSection.appendChild(this.masterVolumeSlider);
-    
-    // Panic button
-    const panicBtn = document.createElement('button');
-    panicBtn.textContent = '⚠️ PANIC';
-    panicBtn.className = 'toolbar-btn toolbar-panic';
-    panicBtn.title = 'Stop all sounds (ESC)';
-    centerSection.appendChild(panicBtn);
-    
-    this.container.appendChild(centerSection);
-    
     // Right section: Status and Ko-fi
     const rightSection = document.createElement('div');
     rightSection.className = 'toolbar-right';
@@ -294,41 +231,102 @@ export class Toolbar {
     
     this.container.appendChild(rightSection);
     
-    // Setup transport event listeners
-    this.bpmInput.addEventListener('change', (e) => {
-      const value = parseInt((e.target as HTMLInputElement).value);
-      if (!isNaN(value)) {
-        bpmController.setBpm(value);
-      }
-    });
-    
-    bpmHalfBtn.addEventListener('click', () => {
-      bpmController.halveBpm();
-      if (this.bpmInput) {
-        this.bpmInput.value = String(bpmController.getBpm());
-      }
-    });
-    
-    bpmDoubleBtn.addEventListener('click', () => {
-      bpmController.doubleBpm();
-      if (this.bpmInput) {
-        this.bpmInput.value = String(bpmController.getBpm());
-      }
-    });
-    
-    this.metronomeBtn.addEventListener('click', () => {
-      bpmController.toggleMetronome();
-      this.updateMetronomeButton();
-    });
-    
-    this.masterVolumeSlider.addEventListener('input', (e) => {
-      const value = parseInt((e.target as HTMLInputElement).value) / 100;
-      audioEngine.setMasterVolume(value);
-    });
-    
-    panicBtn.addEventListener('click', () => {
-      audioEngine.panic();
-    });
+    // Create transport controls in header
+    const headerTransport = document.getElementById('header-transport');
+    if (headerTransport) {
+      // BPM control
+      const bpmLabel = document.createElement('span');
+      bpmLabel.textContent = 'BPM:';
+      bpmLabel.className = 'header-label';
+      headerTransport.appendChild(bpmLabel);
+      
+      this.bpmInput = document.createElement('input');
+      this.bpmInput.type = 'number';
+      this.bpmInput.min = '20';
+      this.bpmInput.max = '300';
+      this.bpmInput.value = String(bpmController.getBpm());
+      this.bpmInput.className = 'header-input header-bpm';
+      this.bpmInput.style.width = '60px';
+      headerTransport.appendChild(this.bpmInput);
+      
+      // BPM buttons
+      const bpmHalfBtn = document.createElement('button');
+      bpmHalfBtn.textContent = '÷2';
+      bpmHalfBtn.className = 'header-btn-small';
+      bpmHalfBtn.title = 'Halve BPM';
+      headerTransport.appendChild(bpmHalfBtn);
+      
+      const bpmDoubleBtn = document.createElement('button');
+      bpmDoubleBtn.textContent = '×2';
+      bpmDoubleBtn.className = 'header-btn-small';
+      bpmDoubleBtn.title = 'Double BPM';
+      headerTransport.appendChild(bpmDoubleBtn);
+      
+      // Metronome button
+      this.metronomeBtn = document.createElement('button');
+      this.metronomeBtn.textContent = '🔇';
+      this.metronomeBtn.className = 'header-btn';
+      this.metronomeBtn.title = 'Toggle Metronome';
+      headerTransport.appendChild(this.metronomeBtn);
+      
+      // Master volume
+      const volumeLabel = document.createElement('span');
+      volumeLabel.textContent = '🔊';
+      volumeLabel.className = 'header-label';
+      headerTransport.appendChild(volumeLabel);
+      
+      this.masterVolumeSlider = document.createElement('input');
+      this.masterVolumeSlider.type = 'range';
+      this.masterVolumeSlider.min = '0';
+      this.masterVolumeSlider.max = '100';
+      this.masterVolumeSlider.value = '100';
+      this.masterVolumeSlider.className = 'header-slider';
+      this.masterVolumeSlider.style.width = '100px';
+      headerTransport.appendChild(this.masterVolumeSlider);
+      
+      // Panic button
+      const panicBtn = document.createElement('button');
+      panicBtn.textContent = '⚠️ PANIC';
+      panicBtn.className = 'header-btn header-panic';
+      panicBtn.title = 'Stop all sounds (ESC)';
+      headerTransport.appendChild(panicBtn);
+      
+      // Setup transport event listeners
+      this.bpmInput.addEventListener('change', (e) => {
+        const value = parseInt((e.target as HTMLInputElement).value);
+        if (!isNaN(value)) {
+          bpmController.setBpm(value);
+        }
+      });
+      
+      bpmHalfBtn.addEventListener('click', () => {
+        bpmController.halveBpm();
+        if (this.bpmInput) {
+          this.bpmInput.value = String(bpmController.getBpm());
+        }
+      });
+      
+      bpmDoubleBtn.addEventListener('click', () => {
+        bpmController.doubleBpm();
+        if (this.bpmInput) {
+          this.bpmInput.value = String(bpmController.getBpm());
+        }
+      });
+      
+      this.metronomeBtn.addEventListener('click', () => {
+        bpmController.toggleMetronome();
+        this.updateMetronomeButton();
+      });
+      
+      this.masterVolumeSlider.addEventListener('input', (e) => {
+        const value = parseInt((e.target as HTMLInputElement).value) / 100;
+        audioEngine.setMasterVolume(value);
+      });
+      
+      panicBtn.addEventListener('click', () => {
+        audioEngine.panic();
+      });
+    }
   }
   
   /**
