@@ -327,6 +327,22 @@ body {
   color: #ffaa88;
 }
 
+.toolbar-kofi {
+  background: #692380;
+  border-color: #692380;
+  color: #fff;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-kofi:hover {
+  background: #7a2a94;
+  border-color: #7a2a94;
+  text-decoration: none;
+}
+
 .menu-wrapper {
   position: relative;
 }

@@ -273,7 +273,7 @@ export class Toolbar {
     
     this.container.appendChild(centerSection);
     
-    // Right section: Status
+    // Right section: Status and Ko-fi
     const rightSection = document.createElement('div');
     rightSection.className = 'toolbar-right';
     
@@ -281,6 +281,16 @@ export class Toolbar {
     statusBar.className = 'toolbar-status';
     this.statusEl = statusBar;
     rightSection.appendChild(statusBar);
+    
+    // Ko-fi button
+    const kofiBtn = document.createElement('a');
+    kofiBtn.href = 'https://ko-fi.com/M4M31SXWYG';
+    kofiBtn.target = '_blank';
+    kofiBtn.rel = 'noopener noreferrer';
+    kofiBtn.textContent = '☕ Fuel Qeyloop';
+    kofiBtn.className = 'toolbar-btn toolbar-kofi';
+    kofiBtn.title = 'Support Qeyloop on Ko-fi';
+    rightSection.appendChild(kofiBtn);
     
     this.container.appendChild(rightSection);
     
