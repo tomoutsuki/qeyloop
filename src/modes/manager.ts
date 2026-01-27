@@ -3,6 +3,7 @@
  * 
  * Manages the mode system including:
  * - Key playback modes (SingleShot, Loop)
+ * - Key playback types (Gate, OneShot)
  * - Modulation settings
  * - Overlap groups
  * - Volume and pitch per key
@@ -11,6 +12,7 @@
 import { audioEngine } from '../audio/engine';
 import {
   PlaybackMode,
+  PlaybackType,
   OverlapMode,
   ModulationPreset,
   KeyMapping,
@@ -142,6 +144,44 @@ export class ModeManager {
    */
   getKeyMode(keyCode: number): PlaybackMode {
     return this.keyMappings.get(keyCode)?.mode ?? PlaybackMode.SingleShot;
+  }
+  
+  // ==========================================================================
+  // PLAYBACK TYPE (Gate / OneShot)
+  // ==========================================================================
+  
+  /**
+   * Set playback type for a key (Gate or OneShot)
+   */
+  setKeyPlaybackType(keyCode: number, playbackType: PlaybackType): void {
+    const mapping = this.keyMappings.get(keyCode);
+    if (!mapping) return;
+    
+    mapping.playbackType = playbackType;
+    audioEngine.setKeyPlaybackType(keyCode, playbackType);
+    this.onMappingChange?.(keyCode, mapping);
+  }
+  
+  /**
+   * Toggle playback type for a key
+   */
+  toggleKeyPlaybackType(keyCode: number): PlaybackType {
+    const mapping = this.keyMappings.get(keyCode);
+    if (!mapping) return PlaybackType.OneShot;
+    
+    const newType = mapping.playbackType === PlaybackType.Gate
+      ? PlaybackType.OneShot
+      : PlaybackType.Gate;
+    
+    this.setKeyPlaybackType(keyCode, newType);
+    return newType;
+  }
+  
+  /**
+   * Get playback type for a key
+   */
+  getKeyPlaybackType(keyCode: number): PlaybackType {
+    return this.keyMappings.get(keyCode)?.playbackType ?? PlaybackType.OneShot;
   }
   
   // ==========================================================================

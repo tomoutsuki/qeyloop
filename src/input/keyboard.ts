@@ -115,6 +115,7 @@ export class KeyboardHandler {
     // Map event.code to our key codes for consistent behavior
     // across different keyboard layouts
     const codeToKey: { [code: string]: string } = {
+      // Main 4x10 grid
       'Digit1': '1', 'Digit2': '2', 'Digit3': '3', 'Digit4': '4', 'Digit5': '5',
       'Digit6': '6', 'Digit7': '7', 'Digit8': '8', 'Digit9': '9', 'Digit0': '0',
       'KeyQ': 'Q', 'KeyW': 'W', 'KeyE': 'E', 'KeyR': 'R', 'KeyT': 'T',
@@ -123,6 +124,11 @@ export class KeyboardHandler {
       'KeyH': 'H', 'KeyJ': 'J', 'KeyK': 'K', 'KeyL': 'L', 'Semicolon': ';',
       'KeyZ': 'Z', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
       'KeyN': 'N', 'KeyM': 'M', 'Comma': ',', 'Period': '.', 'Slash': '/',
+      // Extended keys
+      'ShiftLeft': 'ShiftLeft', 'ShiftRight': 'ShiftRight',
+      'BracketLeft': '[', 'BracketRight': ']',
+      'Backslash': '\\', 'Minus': '-', 'Equal': '=',
+      'Enter': 'Enter', 'Quote': "'", 'Backquote': '`',
     };
     
     const key = codeToKey[event.code];

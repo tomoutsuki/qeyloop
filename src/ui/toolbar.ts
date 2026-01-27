@@ -11,6 +11,7 @@ import { historyManager } from '../edit/history';
 import { HotkeyHandler } from '../input/hotkeys';
 import { audioEngine } from '../audio/engine';
 import { bpmController } from '../timing/bpm';
+import { layoutManager, KeyboardLayoutPreset } from '../input/layouts';
 
 // ============================================================================
 // MENU DEFINITIONS
@@ -146,6 +147,31 @@ export class Toolbar {
             shortcut: 'Ctrl+V', 
             command: Command.Paste,
             enabled: () => clipboardManager.hasContent() && commandExecutor.getSelectedPad() !== null,
+          },
+        ],
+      },
+      {
+        label: 'Layout',
+        items: [
+          { 
+            type: 'item', 
+            label: '✓ QWERTY', 
+            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.QWERTY),
+          },
+          { 
+            type: 'item', 
+            label: 'AZERTY', 
+            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.AZERTY),
+          },
+          { 
+            type: 'item', 
+            label: 'QWERTZ', 
+            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.QWERTZ),
+          },
+          { 
+            type: 'item', 
+            label: 'ABNT2', 
+            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.ABNT2),
           },
         ],
       },
@@ -535,6 +561,25 @@ export class Toolbar {
         modal.remove();
       }
     });
+  }
+  
+  /**
+   * Set keyboard layout and update menu checkmarks
+   */
+  private setKeyboardLayout(preset: KeyboardLayoutPreset): void {
+    layoutManager.setLayout(preset);
+    
+    // Update menu labels to show checkmark on active layout
+    const layoutMenu = this.menus.find(m => m.label === 'Layout');
+    if (layoutMenu) {
+      for (const item of layoutMenu.items) {
+        if (item.type === 'item' && item.label) {
+          const cleanLabel = item.label.replace(/^✓ /, '');
+          const presetMatch = cleanLabel.toLowerCase() === preset;
+          item.label = presetMatch ? `✓ ${cleanLabel}` : cleanLabel;
+        }
+      }
+    }
   }
   
   /**

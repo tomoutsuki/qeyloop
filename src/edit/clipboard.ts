@@ -9,7 +9,7 @@
  * Does NOT use browser clipboard APIs.
  */
 
-import { KeyMapping, SoundData, PlaybackMode, OverlapMode, createDefaultKeyMapping } from '../types';
+import { KeyMapping, SoundData, PlaybackMode, PlaybackType, OverlapMode, createDefaultKeyMapping } from '../types';
 
 // ============================================================================
 // CLIPBOARD TYPES
@@ -42,6 +42,7 @@ export interface FullPadClipboardData {
     volume: number;
     pitchSemitones: number;
     mode: PlaybackMode;
+    playbackType: PlaybackType;
     modulationEnabled: boolean;
     overlapMode: OverlapMode;
     groupId: number;
@@ -164,6 +165,7 @@ export class ClipboardManager {
         volume: mapping.volume,
         pitchSemitones: mapping.pitchSemitones,
         mode: mapping.mode,
+        playbackType: mapping.playbackType,
         modulationEnabled: mapping.modulationEnabled,
         overlapMode: mapping.overlapMode,
         groupId: mapping.groupId,
@@ -205,6 +207,7 @@ export class ClipboardManager {
         volume: mapping.volume,
         pitchSemitones: mapping.pitchSemitones,
         mode: mapping.mode,
+        playbackType: mapping.playbackType,
         modulationEnabled: mapping.modulationEnabled,
         overlapMode: mapping.overlapMode,
         groupId: mapping.groupId,

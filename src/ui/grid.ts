@@ -11,10 +11,12 @@ import { keyboardHandler } from '../input/keyboard';
 import { pageManager } from '../pages/manager';
 import { clipboardManager } from '../edit/clipboard';
 import { commandExecutor } from '../edit/commands';
+import { layoutManager, PHYSICAL_KEYS, KeyboardLayoutPreset } from '../input/layouts';
 import {
   KEYBOARD_LAYOUT,
   KEY_CODES,
   PlaybackMode,
+  PlaybackType,
   OverlapMode,
   KeyMapping,
 } from '../types';
@@ -54,6 +56,11 @@ export class PadGrid {
     this.render();
     this.setupKeyboardFeedback();
     this.setupEventListeners();
+    
+    // Listen for layout changes
+    layoutManager.setLayoutChangeCallback(() => {
+      this.updatePadLabels();
+    });
   }
   
   /**
@@ -64,19 +71,24 @@ export class PadGrid {
   }
   
   /**
-   * Render the pad grid
+   * Render the pad grid using physical key codes
    */
   private render(): void {
     this.container.innerHTML = '';
     this.container.className = 'pad-grid';
     
-    for (const row of KEYBOARD_LAYOUT) {
+    const allRows = [PHYSICAL_KEYS.row1, PHYSICAL_KEYS.row2, PHYSICAL_KEYS.row3, PHYSICAL_KEYS.row4];
+    
+    for (const row of allRows) {
       const rowEl = document.createElement('div');
       rowEl.className = 'pad-row';
       
-      for (const key of row) {
-        const keyCode = KEY_CODES[key];
-        const padEl = this.createPadElement(key, keyCode);
+      for (const code of row) {
+        // Get key code and label from layout manager
+        const label = layoutManager.getKeyLabel(code);
+        const keyCode = this.codeToKeyCode(code);
+        
+        const padEl = this.createPadElement(label, keyCode, code);
         rowEl.appendChild(padEl);
         this.padElements.set(keyCode, padEl);
       }
@@ -86,12 +98,55 @@ export class PadGrid {
   }
   
   /**
+   * Convert event.code to keyCode
+   */
+  private codeToKeyCode(code: string): number {
+    const codeMap: { [code: string]: number } = {
+      'Digit1': 49, 'Digit2': 50, 'Digit3': 51, 'Digit4': 52, 'Digit5': 53,
+      'Digit6': 54, 'Digit7': 55, 'Digit8': 56, 'Digit9': 57, 'Digit0': 48,
+      'KeyQ': 81, 'KeyW': 87, 'KeyE': 69, 'KeyR': 82, 'KeyT': 84,
+      'KeyY': 89, 'KeyU': 85, 'KeyI': 73, 'KeyO': 79, 'KeyP': 80,
+      'KeyA': 65, 'KeyS': 83, 'KeyD': 68, 'KeyF': 70, 'KeyG': 71,
+      'KeyH': 72, 'KeyJ': 74, 'KeyK': 75, 'KeyL': 76, 'Semicolon': 186,
+      'KeyZ': 90, 'KeyX': 88, 'KeyC': 67, 'KeyV': 86, 'KeyB': 66,
+      'KeyN': 78, 'KeyM': 77, 'Comma': 188, 'Period': 190, 'Slash': 191,
+      // Extended keys
+      'ShiftLeft': 16, 'ShiftRight': 16,
+      'BracketLeft': 219, 'BracketRight': 221,
+      'Backslash': 220, 'Minus': 189, 'Equal': 187,
+      'Enter': 13, 'Quote': 222, 'Backquote': 192,
+    };
+    return codeMap[code] || 0;
+  }
+  
+  /**
+   * Update pad labels when keyboard layout changes
+   */
+  updatePadLabels(): void {
+    const allCodes = [...PHYSICAL_KEYS.row1, ...PHYSICAL_KEYS.row2, ...PHYSICAL_KEYS.row3, ...PHYSICAL_KEYS.row4];
+    
+    for (const code of allCodes) {
+      const keyCode = this.codeToKeyCode(code);
+      const pad = this.padElements.get(keyCode);
+      if (pad) {
+        const labelEl = pad.querySelector('.pad-label');
+        if (labelEl) {
+          labelEl.textContent = layoutManager.getKeyLabel(code);
+        }
+      }
+    }
+  }
+  
+  /**
    * Create a single pad element
    */
-  private createPadElement(key: string, keyCode: number): HTMLElement {
+  private createPadElement(key: string, keyCode: number, code?: string): HTMLElement {
     const pad = document.createElement('div');
     pad.className = 'pad';
     pad.dataset.keycode = keyCode.toString();
+    if (code) {
+      pad.dataset.code = code;  // Store physical key code for layout updates
+    }
     
     // Key label
     const label = document.createElement('span');

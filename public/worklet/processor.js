@@ -22,6 +22,12 @@ const PlaybackMode = {
   Loop: 1,
 };
 
+// Playback types (Gate vs One-Shot)
+const PlaybackType = {
+  Gate: 0,     // Sound plays while key held
+  OneShot: 1,  // Sound plays to end regardless of key up
+};
+
 // Overlap modes
 const OverlapMode = {
   Polyphonic: 0,
@@ -67,9 +73,11 @@ class JsDspEngine {
         volume: 1.0,
         pitch: 1.0,
         mode: PlaybackMode.SingleShot,
+        playbackType: PlaybackType.OneShot,
         groupId: 0,
         keyCode: 0,
         modulationEnabled: false,
+        finishingLoop: false,  // For OneShot+Loop: finishing final iteration
       };
     }
     
@@ -79,6 +87,7 @@ class JsDspEngine {
       this.keyMappings[i] = {
         soundIndex: 0,
         mode: PlaybackMode.SingleShot,
+        playbackType: PlaybackType.OneShot,
         overlapMode: OverlapMode.Polyphonic,
         groupId: 0,
         volume: 1.0,
@@ -107,10 +116,11 @@ class JsDspEngine {
   }
   
   // Set key mapping
-  set_key_mapping(keyCode, soundIndex, mode, overlapMode, groupId, volume, pitchSemitones, modulationEnabled) {
+  set_key_mapping(keyCode, soundIndex, mode, playbackType, overlapMode, groupId, volume, pitchSemitones, modulationEnabled) {
     const mapping = this.keyMappings[keyCode];
     mapping.soundIndex = soundIndex;
     mapping.mode = mode;
+    mapping.playbackType = playbackType;
     mapping.overlapMode = overlapMode;
     mapping.groupId = groupId;
     mapping.volume = Math.max(0, Math.min(1, volume));
@@ -123,6 +133,10 @@ class JsDspEngine {
   
   set_key_mode(keyCode, mode) {
     this.keyMappings[keyCode].mode = mode;
+  }
+  
+  set_key_playback_type(keyCode, playbackType) {
+    this.keyMappings[keyCode].playbackType = playbackType;
   }
   
   set_key_modulation(keyCode, enabled) {
@@ -166,20 +180,36 @@ class JsDspEngine {
         voice.volume = mapping.volume;
         voice.pitch = Math.pow(2, mapping.pitchSemitones / 12);
         voice.mode = mapping.mode;
+        voice.playbackType = mapping.playbackType;
         voice.groupId = mapping.groupId;
         voice.keyCode = keyCode;
         voice.modulationEnabled = mapping.modulationEnabled;
+        voice.finishingLoop = false;  // Reset finishing state
         break;
       }
     }
   }
   
   // Release a note
+  // Playback behavior matrix:
+  // - Gate + Single: Plays while key held → key up stops immediately
+  // - Gate + Loop: Loops while key held → key up stops immediately
+  // - OneShot + Single: Plays to end → key up does nothing
+  // - OneShot + Loop: Loops while held → key up finishes final iteration
   note_off(keyCode) {
     for (let i = 0; i < MAX_VOICES; i++) {
-      if (this.voices[i].active && this.voices[i].keyCode === keyCode) {
-        if (this.voices[i].mode === PlaybackMode.Loop) {
-          this.voices[i].active = false;
+      const voice = this.voices[i];
+      if (voice.active && voice.keyCode === keyCode) {
+        if (voice.playbackType === PlaybackType.Gate) {
+          // Gate: Always stop immediately on key up
+          voice.active = false;
+        } else {
+          // OneShot behavior
+          if (voice.mode === PlaybackMode.Loop) {
+            // OneShot + Loop: Mark to finish after current iteration
+            voice.finishingLoop = true;
+          }
+          // OneShot + Single: Do nothing, let it play to end naturally
         }
       }
     }
@@ -306,6 +336,13 @@ class JsDspEngine {
         
         if (posFloor >= sound.length) {
           if (voice.mode === PlaybackMode.Loop) {
+            // Check if we're in finishing loop mode (OneShot + Loop after key release)
+            if (voice.finishingLoop) {
+              // Finished final iteration, stop
+              voice.active = false;
+              voice.finishingLoop = false;
+              continue;
+            }
             // Loop back to start
             voice.position = voice.position - sound.length;
             continue;
@@ -327,6 +364,12 @@ class JsDspEngine {
           
           // If we're past the target length, loop back
           if (voice.position >= targetLength && targetLength > 0) {
+            // Check if we're in finishing loop mode
+            if (voice.finishingLoop) {
+              voice.active = false;
+              voice.finishingLoop = false;
+              continue;
+            }
             voice.position = voice.position % targetLength;
             continue;
           }
@@ -425,6 +468,7 @@ class QeyloopProcessor extends AudioWorkletProcessor {
           data.keyCode,
           data.soundIndex,
           data.mode,
+          data.playbackType,
           data.overlapMode,
           data.groupId,
           data.volume,
@@ -435,6 +479,10 @@ class QeyloopProcessor extends AudioWorkletProcessor {
         
       case 'setKeyMode':
         engine.set_key_mode(data.keyCode, data.mode);
+        break;
+        
+      case 'setKeyPlaybackType':
+        engine.set_key_playback_type(data.keyCode, data.playbackType);
         break;
         
       case 'setKeyVolume':

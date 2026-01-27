@@ -17,6 +17,17 @@ export const enum PlaybackMode {
   Loop = 1,
 }
 
+/** 
+ * Playback type: Gate vs One-Shot behavior
+ * Controls how key up/down affects playback
+ */
+export const enum PlaybackType {
+  /** Audio plays only while key is held; key up stops immediately */
+  Gate = 0,
+  /** Audio plays until end of buffer regardless of key up */
+  OneShot = 1,
+}
+
 /** How sounds in the same group overlap */
 export const enum OverlapMode {
   /** Multiple sounds can play simultaneously */
@@ -49,8 +60,10 @@ export interface KeyMapping {
   soundIndex: number;
   /** Name of the sound file */
   soundName: string;
-  /** Playback mode */
+  /** Playback mode (SingleShot or Loop) */
   mode: PlaybackMode;
+  /** Playback type (Gate or OneShot) */
+  playbackType: PlaybackType;
   /** Overlap behavior mode */
   overlapMode: OverlapMode;
   /** Overlap group ID (0-255) */
@@ -72,6 +85,7 @@ export function createDefaultKeyMapping(keyCode: number): KeyMapping {
     soundIndex: -1,
     soundName: '',
     mode: PlaybackMode.SingleShot,
+    playbackType: PlaybackType.OneShot,
     overlapMode: OverlapMode.Polyphonic,
     groupId: 0,
     volume: 1.0,
@@ -157,6 +171,8 @@ export interface PadSettings {
   pitchSemitones: number;
   /** Playback mode (0=SingleShot, 1=Loop) */
   playbackMode: PlaybackMode;
+  /** Playback type (0=Gate, 1=OneShot) */
+  playbackType: PlaybackType;
   /** Whether modulation is enabled */
   modulationEnabled: boolean;
   /** Overlap mode (0=Polyphonic, 1=Monophonic) */
@@ -251,6 +267,7 @@ export type WorkletMessage =
   | { type: 'loadSound'; data: { index: number; samples: Float32Array } }
   | { type: 'setKeyMapping'; data: Omit<KeyMapping, 'soundName' | 'hasSound'> & { modulationEnabled: boolean } }
   | { type: 'setKeyMode'; data: { keyCode: number; mode: PlaybackMode } }
+  | { type: 'setKeyPlaybackType'; data: { keyCode: number; playbackType: PlaybackType } }
   | { type: 'setKeyVolume'; data: { keyCode: number; volume: number } }
   | { type: 'setKeyPitch'; data: { keyCode: number; semitones: number } }
   | { type: 'setKeyModulation'; data: { keyCode: number; enabled: boolean } }
@@ -288,6 +305,7 @@ export const KEYBOARD_LAYOUT = [
 
 /** Map key character to keyCode */
 export const KEY_CODES: { [key: string]: number } = {
+  // Main 4x10 grid
   '1': 49, '2': 50, '3': 51, '4': 52, '5': 53,
   '6': 54, '7': 55, '8': 56, '9': 57, '0': 48,
   'Q': 81, 'W': 87, 'E': 69, 'R': 82, 'T': 84,
@@ -296,6 +314,11 @@ export const KEY_CODES: { [key: string]: number } = {
   'H': 72, 'J': 74, 'K': 75, 'L': 76, ';': 186,
   'Z': 90, 'X': 88, 'C': 67, 'V': 86, 'B': 66,
   'N': 78, 'M': 77, ',': 188, '.': 190, '/': 191,
+  // Extended keys
+  'ShiftLeft': 16, 'ShiftRight': 16,
+  '[': 219, ']': 221,
+  '\\': 220, '-': 189, '=': 187,
+  'Enter': 13, "'": 222, '`': 192,
 };
 
 /** Get all key codes used in the layout */

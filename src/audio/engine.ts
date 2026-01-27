@@ -10,6 +10,7 @@
 
 import {
   PlaybackMode,
+  PlaybackType,
   OverlapMode,
   ModulationPreset,
   KeyMapping,
@@ -313,6 +314,7 @@ export class AudioEngine {
         keyCode: mapping.keyCode,
         soundIndex: mapping.soundIndex,
         mode: mapping.mode,
+        playbackType: mapping.playbackType,
         overlapMode: mapping.overlapMode,
         groupId: mapping.groupId,
         volume: mapping.volume,
@@ -327,6 +329,13 @@ export class AudioEngine {
    */
   setKeyMode(keyCode: number, mode: PlaybackMode): void {
     this.postMessage({ type: 'setKeyMode', data: { keyCode, mode } });
+  }
+  
+  /**
+   * Set playback type for a key (Gate or OneShot)
+   */
+  setKeyPlaybackType(keyCode: number, playbackType: PlaybackType): void {
+    this.postMessage({ type: 'setKeyPlaybackType', data: { keyCode, playbackType } });
   }
   
   /**

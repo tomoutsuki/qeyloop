@@ -12,6 +12,7 @@ import { projectIO } from '../project/io';
 import { pageManager, MAX_PAGES } from '../pages/manager';
 import {
   PlaybackMode,
+  PlaybackType,
   OverlapMode,
   ModulationPreset,
   KeyMapping,
@@ -42,6 +43,7 @@ export class ControlPanel {
     overlapSelect?: HTMLSelectElement;
     groupInput?: HTMLInputElement;
     modeToggle?: HTMLButtonElement;
+    playbackTypeToggle?: HTMLButtonElement;
     modToggle?: HTMLButtonElement;
     masterVolume?: HTMLInputElement;
     selectedKeyLabel?: HTMLSpanElement;
@@ -82,6 +84,7 @@ export class ControlPanel {
     padSection.id = 'pad-settings';
     padSection.appendChild(this.createSelectedPadInfo());
     padSection.appendChild(this.createPadModeControl());
+    padSection.appendChild(this.createPadPlaybackTypeControl());
     padSection.appendChild(this.createPadVolumeControl());
     padSection.appendChild(this.createPadPitchControl());
     padSection.appendChild(this.createPadModulationControl());
@@ -253,6 +256,23 @@ export class ControlPanel {
     btn.textContent = '▶ Single';
     btn.className = 'btn';
     this.elements.modeToggle = btn;
+    container.appendChild(btn);
+    
+    return container;
+  }
+  
+  /**
+   * Create pad playback type control (Gate / One-Shot)
+   */
+  private createPadPlaybackTypeControl(): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'control-row';
+    
+    const btn = document.createElement('button');
+    btn.textContent = '🔊 One-Shot';
+    btn.className = 'btn';
+    btn.title = 'One-Shot: Audio plays to end regardless of key release';
+    this.elements.playbackTypeToggle = btn;
     container.appendChild(btn);
     
     return container;
@@ -554,6 +574,14 @@ export class ControlPanel {
       }
     });
     
+    // Playback type toggle (Gate / One-Shot)
+    this.elements.playbackTypeToggle?.addEventListener('click', () => {
+      if (this.selectedKeyCode !== null) {
+        const newType = modeManager.toggleKeyPlaybackType(this.selectedKeyCode);
+        this.updatePlaybackTypeDisplay(newType);
+      }
+    });
+    
     // Volume slider
     this.elements.volumeSlider?.addEventListener('input', (e) => {
       if (this.selectedKeyCode !== null) {
@@ -677,6 +705,7 @@ export class ControlPanel {
     
     // Update controls
     this.updateModeDisplay(mapping.mode);
+    this.updatePlaybackTypeDisplay(mapping.playbackType);
     this.updateModDisplay(mapping.modulationEnabled);
     
     if (this.elements.volumeSlider) {
@@ -732,6 +761,22 @@ export class ControlPanel {
     if (this.elements.modeToggle) {
       this.elements.modeToggle.textContent = mode === PlaybackMode.Loop ? '↻ Loop' : '▶ Single';
       this.elements.modeToggle.classList.toggle('loop', mode === PlaybackMode.Loop);
+    }
+  }
+  
+  /**
+   * Update playback type display (Gate / One-Shot)
+   */
+  private updatePlaybackTypeDisplay(playbackType: PlaybackType): void {
+    if (this.elements.playbackTypeToggle) {
+      if (playbackType === PlaybackType.Gate) {
+        this.elements.playbackTypeToggle.textContent = '🎹 Gate';
+        this.elements.playbackTypeToggle.title = 'Gate: Audio plays only while key is held';
+      } else {
+        this.elements.playbackTypeToggle.textContent = '🔊 One-Shot';
+        this.elements.playbackTypeToggle.title = 'One-Shot: Audio plays to end regardless of key release';
+      }
+      this.elements.playbackTypeToggle.classList.toggle('gate', playbackType === PlaybackType.Gate);
     }
   }
   

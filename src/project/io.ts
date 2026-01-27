@@ -24,6 +24,7 @@ import {
   KeyLoopPageEntry,
   generatePageId,
   PlaybackMode,
+  PlaybackType,
   OverlapMode,
 } from '../types';
 
@@ -116,6 +117,7 @@ export class ProjectIO {
           volume: mapping.volume,
           pitchSemitones: mapping.pitchSemitones,
           playbackMode: mapping.mode,
+          playbackType: mapping.playbackType,
           modulationEnabled: mapping.modulationEnabled,
           overlapMode: mapping.overlapMode,
           overlapGroupId: mapping.groupId,
@@ -246,6 +248,7 @@ export class ProjectIO {
         soundIndex: globalSoundIndex,
         soundName: pad.soundFileName,
         mode: pad.playbackMode,
+        playbackType: pad.playbackType ?? PlaybackType.OneShot,  // Default for backward compat
         overlapMode: pad.overlapMode,
         groupId: pad.overlapGroupId,
         volume: pad.volume,

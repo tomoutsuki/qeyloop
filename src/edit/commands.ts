@@ -11,7 +11,7 @@ import { pageManager } from '../pages/manager';
 import { projectIO } from '../project/io';
 import { clipboardManager, ClipboardType } from './clipboard';
 import { historyManager, HistoryActionType } from './history';
-import { createDefaultKeyMapping, SoundData } from '../types';
+import { createDefaultKeyMapping, SoundData, PlaybackType } from '../types';
 
 // ============================================================================
 // COMMAND TYPES
@@ -447,6 +447,7 @@ export class CommandExecutor {
       soundIndex,
       soundName: hasSound ? content.settings.soundName : '',
       mode: content.settings.mode,
+      playbackType: content.settings.playbackType ?? PlaybackType.OneShot,
       overlapMode: content.settings.overlapMode,
       groupId: content.settings.groupId,
       volume: content.settings.volume,
