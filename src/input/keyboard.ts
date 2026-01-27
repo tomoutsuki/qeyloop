@@ -58,6 +58,10 @@ export class KeyboardHandler {
     // Check if this key is in our launchpad layout
     if (!this.isLaunchpadKey(keyCode)) return;
     
+    // Ignore if using hotkey modifiers (Shift, Ctrl, Alt, Meta) UNLESS the key being pressed IS the modifier
+    const isModifierKey = keyCode === 16; // ShiftRight
+    if (!isModifierKey && (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)) return;
+    
     // Prevent key repeat
     if (this.heldKeys.has(keyCode)) return;
     
@@ -125,7 +129,7 @@ export class KeyboardHandler {
       'KeyZ': 'Z', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
       'KeyN': 'N', 'KeyM': 'M', 'Comma': ',', 'Period': '.', 'Slash': '/',
       // Extended keys
-      'ShiftLeft': 'ShiftLeft', 'ShiftRight': 'ShiftRight',
+      'ShiftRight': 'ShiftRight',
       'BracketLeft': '[', 'BracketRight': ']',
       'Backslash': '\\', 'Minus': '-', 'Equal': '=',
       'Enter': 'Enter', 'Quote': "'", 'Backquote': '`',

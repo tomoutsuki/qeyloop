@@ -624,6 +624,20 @@ body {
   display: flex;
   flex: 1;
   gap: 4px;
+  position: relative;
+}
+
+/* Keyboard stagger - simulate real keyboard diagonal layout */
+.pad-row:nth-child(2) {
+  margin-left: 20px;
+}
+
+.pad-row:nth-child(3) {
+  margin-left: 30px;
+}
+
+.pad-row:nth-child(4) {
+  margin-left: 10px;
 }
 
 .pad {
@@ -639,6 +653,17 @@ body {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+}
+
+/* Special key sizes */
+.pad.key-enter {
+  flex: 1.5;
+  min-width: 0;
+}
+
+.pad.key-shift-right {
+  flex: 1.8;
+  min-width: 0;
 }
 
 .pad:hover {

@@ -111,7 +111,7 @@ export class PadGrid {
       'KeyZ': 90, 'KeyX': 88, 'KeyC': 67, 'KeyV': 86, 'KeyB': 66,
       'KeyN': 78, 'KeyM': 77, 'Comma': 188, 'Period': 190, 'Slash': 191,
       // Extended keys
-      'ShiftLeft': 16, 'ShiftRight': 16,
+      'ShiftRight': 16,
       'BracketLeft': 219, 'BracketRight': 221,
       'Backslash': 220, 'Minus': 189, 'Equal': 187,
       'Enter': 13, 'Quote': 222, 'Backquote': 192,
@@ -146,6 +146,9 @@ export class PadGrid {
     pad.dataset.keycode = keyCode.toString();
     if (code) {
       pad.dataset.code = code;  // Store physical key code for layout updates
+      // Add special CSS classes for key sizing
+      if (code === 'Enter') pad.classList.add('key-enter');
+      if (code === 'ShiftRight') pad.classList.add('key-shift-right');
     }
     
     // Key label

@@ -38,8 +38,8 @@ export const PHYSICAL_KEYS = {
   row2: ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP', 'BracketLeft', 'BracketRight', 'Backslash'],
   // Row 3: Home row (A S D F G H J K L ; ' Enter)
   row3: ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon', 'Quote', 'Enter'],
-  // Row 4: Bottom row (Shift Z X C V B N M , . / Shift)
-  row4: ['ShiftLeft', 'KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma', 'Period', 'Slash', 'ShiftRight'],
+  // Row 4: Bottom row (Z X C V B N M , . / Shift)
+  row4: ['KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma', 'Period', 'Slash', 'ShiftRight'],
 } as const;
 
 /** Extended keys for future mapping (right-side and special keys) */
@@ -76,7 +76,7 @@ const QWERTY_LABELS: { [code: string]: string } = {
   'KeyZ': 'Z', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
   'KeyN': 'N', 'KeyM': 'M', 'Comma': ',', 'Period': '.', 'Slash': '/',
   // Extended keys
-  'ShiftLeft': '⇧L', 'ShiftRight': '⇧R',
+  'ShiftRight': '⇧',
   'BracketLeft': '[', 'BracketRight': ']',
   'Backslash': '\\', 'Minus': '-', 'Equal': '=',
   'Enter': '↵', 'Quote': "'", 'Backquote': '`',
@@ -93,7 +93,7 @@ const AZERTY_LABELS: { [code: string]: string } = {
   'KeyZ': 'W', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
   'KeyN': 'N', 'KeyM': ',', 'Comma': ';', 'Period': ':', 'Slash': '!',
   // Extended keys
-  'ShiftLeft': '⇧L', 'ShiftRight': '⇧R',
+  'ShiftRight': '⇧',
   'BracketLeft': '^', 'BracketRight': '$',
   'Backslash': '*', 'Minus': ')', 'Equal': '=',
   'Enter': '↵', 'Quote': 'ù', 'Backquote': '²',
@@ -110,7 +110,7 @@ const QWERTZ_LABELS: { [code: string]: string } = {
   'KeyZ': 'Y', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
   'KeyN': 'N', 'KeyM': 'M', 'Comma': ',', 'Period': '.', 'Slash': '-',
   // Extended keys
-  'ShiftLeft': '⇧L', 'ShiftRight': '⇧R',
+  'ShiftRight': '⇧',
   'BracketLeft': 'Ü', 'BracketRight': '+',
   'Backslash': '#', 'Minus': 'ß', 'Equal': '´',
   'Enter': '↵', 'Quote': 'Ä', 'Backquote': '^',
@@ -127,7 +127,7 @@ const ABNT2_LABELS: { [code: string]: string } = {
   'KeyZ': 'Z', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
   'KeyN': 'N', 'KeyM': 'M', 'Comma': ',', 'Period': '.', 'Slash': ';',
   // Extended keys
-  'ShiftLeft': '⇧L', 'ShiftRight': '⇧R',
+  'ShiftRight': '⇧',
   'BracketLeft': '´', 'BracketRight': '[',
   'Backslash': ']', 'Minus': '-', 'Equal': '=',
   'Enter': '↵', 'Quote': '~', 'Backquote': "'",

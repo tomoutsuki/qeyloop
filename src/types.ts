@@ -315,7 +315,7 @@ export const KEY_CODES: { [key: string]: number } = {
   'Z': 90, 'X': 88, 'C': 67, 'V': 86, 'B': 66,
   'N': 78, 'M': 77, ',': 188, '.': 190, '/': 191,
   // Extended keys
-  'ShiftLeft': 16, 'ShiftRight': 16,
+  'ShiftRight': 16,
   '[': 219, ']': 221,
   '\\': 220, '-': 189, '=': 187,
   'Enter': 13, "'": 222, '`': 192,
