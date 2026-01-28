@@ -261,6 +261,8 @@ export class PadGrid {
    * Handle sound file drop on a pad
    */
   private async handleSoundDrop(keyCode: number, event: DragEvent): Promise<void> {
+    console.log(`handleSoundDrop: keyCode=${keyCode}`);
+    
     const files = event.dataTransfer?.files;
     if (!files || files.length === 0) return;
     
@@ -280,6 +282,8 @@ export class PadGrid {
         soundIndex = pageManager.incrementNextSoundIndex();
         pageManager.setKeySoundIndex(keyCode, soundIndex);
       }
+      
+      console.log(`handleSoundDrop: assigning sound ${file.name} to keyCode=${keyCode}, soundIndex=${soundIndex}`);
       
       // Load sound into the key's dedicated slot
       const soundData = await audioEngine.loadSound(soundIndex, file);

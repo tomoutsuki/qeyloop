@@ -82,6 +82,14 @@ export class KeyboardHandler {
       this.isRightShiftHeld = true;
     }
     
+    console.log(`KeyboardHandler: noteOn(${keyCode}) triggered by event.code=${event.code}, event.key=${event.key}`);
+    
+    // Debug: check what mapping this key has
+    const mapping = (window as any).modeManager?.getMapping?.(keyCode);
+    if (mapping) {
+      console.log(`  → Key ${keyCode} mapping: soundIndex=${mapping.soundIndex}, hasSound=${mapping.hasSound}, soundName=${mapping.soundName}`);
+    }
+    
     // === PAD-TRIGGERED PAGE JUMP ===
     // Check if this pad should trigger a page jump (but don't execute yet)
     const targetPage = pageManager.checkPadJump(keyCode);

@@ -89,6 +89,8 @@ export class ModeManager {
     mapping.soundName = soundName;
     mapping.hasSound = true;
     
+    console.log(`ModeManager.assignSound: keyCode=${keyCode}, soundIndex=${soundIndex}, soundName=${soundName}`);
+    
     audioEngine.setKeyMapping(mapping);
     this.onMappingChange?.(keyCode, mapping);
   }

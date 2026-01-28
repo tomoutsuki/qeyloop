@@ -253,6 +253,7 @@ export class PageManager {
       if (mapping.hasSound) {
         // Verify the sound index is in this page's range
         if (mapping.soundIndex >= pageStart && mapping.soundIndex < pageEnd) {
+          console.log(`  Loading mapping: keyCode=${keyCode}, soundIndex=${mapping.soundIndex}, soundName=${mapping.soundName}`);
           modeManager.setMapping(mapping);
           appliedMappings++;
         }
@@ -260,6 +261,17 @@ export class PageManager {
     }
     
     console.log(`Applied ${appliedMappings} key mappings to page ${pageIndex + 1}`);
+    
+    // Update nextSoundIndex to point to the next available slot
+    // Find the highest sound index used in this page
+    let maxUsedIndex = pageStart - 1;
+    for (const [index] of page.sounds) {
+      if (index > maxUsedIndex) {
+        maxUsedIndex = index;
+      }
+    }
+    page.nextSoundIndex = maxUsedIndex + 1;
+    console.log(`Set nextSoundIndex to ${page.nextSoundIndex} (highest used: ${maxUsedIndex})`);
     
     // Apply modulation preset
     modeManager.setModulationPreset(page.modulationPreset);

@@ -264,7 +264,9 @@ export class ProjectIO {
         65, 83, 68, 70, 71, 72, 74, 75, 76, 186, // ASDFGHJKL;
         90, 88, 67, 86, 66, 78, 77, 188, 190, 191, // ZXCVBNM,./
       ];
-      return oldLayout[oldKeyCode];
+      const converted = oldLayout[oldKeyCode];
+      console.log(`Converting legacy keyCode ${oldKeyCode} (index) → ${converted}`);
+      return converted;
     }
     
     // KeyCode is already in proper format
@@ -278,10 +280,20 @@ export class ProjectIO {
     // Apply modulation preset
     modeManager.setModulationPreset(keyPageFile.modulationPreset);
     
+    // Track which keyCodes have been processed to avoid duplicates
+    const processedKeys = new Set<number>();
+    
     // Apply pad settings
     for (const pad of keyPageFile.pads) {
       // Convert old keyCode format to new format if needed
       const keyCode = this.convertLegacyKeyCode(pad.keyCode);
+      
+      // Skip if this keyCode was already processed (duplicate in file)
+      if (processedKeys.has(keyCode)) {
+        console.warn(`Duplicate keyCode ${keyCode} found in .keypage file, skipping`);
+        continue;
+      }
+      processedKeys.add(keyCode);
       
       // Remap sound index to global range
       const globalSoundIndex = pad.hasSound ? (pageStart + pad.soundIndex) : 0;
