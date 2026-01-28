@@ -116,32 +116,25 @@ export class KeyboardHandler {
    * Uses event.code for layout-independent mapping
    */
   private getKeyCode(event: KeyboardEvent): number {
-    // Map event.code to our key codes for consistent behavior
-    // across different keyboard layouts
-    const codeToKey: { [code: string]: string } = {
-      // Main 4x10 grid
-      'Digit1': '1', 'Digit2': '2', 'Digit3': '3', 'Digit4': '4', 'Digit5': '5',
-      'Digit6': '6', 'Digit7': '7', 'Digit8': '8', 'Digit9': '9', 'Digit0': '0',
-      'KeyQ': 'Q', 'KeyW': 'W', 'KeyE': 'E', 'KeyR': 'R', 'KeyT': 'T',
-      'KeyY': 'Y', 'KeyU': 'U', 'KeyI': 'I', 'KeyO': 'O', 'KeyP': 'P',
-      'KeyA': 'A', 'KeyS': 'S', 'KeyD': 'D', 'KeyF': 'F', 'KeyG': 'G',
-      'KeyH': 'H', 'KeyJ': 'J', 'KeyK': 'K', 'KeyL': 'L', 'Semicolon': ';',
-      'KeyZ': 'Z', 'KeyX': 'X', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B',
-      'KeyN': 'N', 'KeyM': 'M', 'Comma': ',', 'Period': '.', 'Slash': '/',
+    // Map event.code directly to keyCodes for consistent behavior
+    const codeToKeyCode: { [code: string]: number } = {
+      // Main grid
+      'Digit1': 49, 'Digit2': 50, 'Digit3': 51, 'Digit4': 52, 'Digit5': 53,
+      'Digit6': 54, 'Digit7': 55, 'Digit8': 56, 'Digit9': 57, 'Digit0': 48,
+      'KeyQ': 81, 'KeyW': 87, 'KeyE': 69, 'KeyR': 82, 'KeyT': 84,
+      'KeyY': 89, 'KeyU': 85, 'KeyI': 73, 'KeyO': 79, 'KeyP': 80,
+      'KeyA': 65, 'KeyS': 83, 'KeyD': 68, 'KeyF': 70, 'KeyG': 71,
+      'KeyH': 72, 'KeyJ': 74, 'KeyK': 75, 'KeyL': 76, 'Semicolon': 186,
+      'KeyZ': 90, 'KeyX': 88, 'KeyC': 67, 'KeyV': 86, 'KeyB': 66,
+      'KeyN': 78, 'KeyM': 77, 'Comma': 188, 'Period': 190, 'Slash': 191,
       // Extended keys
-      'ShiftRight': 'ShiftRight',
-      'BracketLeft': '[', 'BracketRight': ']',
-      'Backslash': '\\', 'Minus': '-', 'Equal': '=',
-      'Enter': 'Enter', 'Quote': "'", 'Backquote': '`',
+      'ShiftRight': 16,
+      'BracketLeft': 219, 'BracketRight': 221,
+      'Backslash': 220, 'Minus': 189, 'Equal': 187,
+      'Enter': 13, 'Quote': 222, 'Backquote': 192,
     };
     
-    const key = codeToKey[event.code];
-    if (key && KEY_CODES[key] !== undefined) {
-      return KEY_CODES[key];
-    }
-    
-    // Fallback to keyCode (deprecated but reliable)
-    return event.keyCode;
+    return codeToKeyCode[event.code] || 0;
   }
   
   /**

@@ -323,5 +323,16 @@ export const KEY_CODES: { [key: string]: number } = {
 
 /** Get all key codes used in the layout */
 export function getAllKeyCodes(): number[] {
-  return Object.values(KEY_CODES);
+  // Return all unique keyCodes for the extended 48-key layout
+  const codes = [
+    // Row 1: ` 1 2 3 4 5 6 7 8 9 0 - =
+    192, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 189, 187,
+    // Row 2: Q W E R T Y U I O P [ ] \
+    81, 87, 69, 82, 84, 89, 85, 73, 79, 80, 219, 221, 220,
+    // Row 3: A S D F G H J K L ; ' Enter
+    65, 83, 68, 70, 71, 72, 74, 75, 76, 186, 222, 13,
+    // Row 4: Z X C V B N M , . / Shift
+    90, 88, 67, 86, 66, 78, 77, 188, 190, 191, 16,
+  ];
+  return codes;
 }

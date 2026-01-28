@@ -231,6 +231,47 @@ export class ProjectIO {
   }
   
   /**
+   * Convert legacy keyCode to new extended keyboard layout keyCode
+   * Old files used the 40-key layout, new layout has 48 keys with extended keys
+   */
+  private convertLegacyKeyCode(oldKeyCode: number): number {
+    // If keyCode is already in the new system (from newer files), return as-is
+    // New keyCodes include: 192 (backtick), 189 (minus), 187 (equal), 219/221/220 (brackets),
+    // 13 (enter), 222 (quote), 16 (shift)
+    const newKeyCodes = [192, 189, 187, 219, 221, 220, 13, 222, 16];
+    if (newKeyCodes.includes(oldKeyCode)) {
+      return oldKeyCode;
+    }
+    
+    // Old keyCodes (40-key layout) remain the same in new layout:
+    // Numbers: 48-57 (0-9) - but 48 moved from position 9 to position 10
+    // Letters: 65-90 (A-Z)
+    // Symbols: 186 (;), 188 (,), 190 (.), 191 (/)
+    
+    // The old layout was: 1-9-0, Q-P, A-;, Z-/
+    // The new layout is: `-1-9-0-=, Q-P-[-]-\, A-;-'-Enter, Z-/-Shift
+    
+    // All old keyCodes are still valid in the new system, no conversion needed
+    // The issue is that the old files might not have been using keyCodes at all,
+    // but rather array indices. Let me check if the keyCode is in the 0-39 range
+    
+    if (oldKeyCode >= 0 && oldKeyCode < 40) {
+      // Old format used array indices (0-39)
+      // Convert to actual keyCodes
+      const oldLayout = [
+        49, 50, 51, 52, 53, 54, 55, 56, 57, 48,  // 1234567890
+        81, 87, 69, 82, 84, 89, 85, 73, 79, 80,  // QWERTYUIOP
+        65, 83, 68, 70, 71, 72, 74, 75, 76, 186, // ASDFGHJKL;
+        90, 88, 67, 86, 66, 78, 77, 188, 190, 191, // ZXCVBNM,./
+      ];
+      return oldLayout[oldKeyCode];
+    }
+    
+    // KeyCode is already in proper format
+    return oldKeyCode;
+  }
+
+  /**
    * Apply .keypage pad settings to active page
    */
   private applyKeyPageSettings(keyPageFile: KeyPageFile, pageStart: number): void {
@@ -239,12 +280,15 @@ export class ProjectIO {
     
     // Apply pad settings
     for (const pad of keyPageFile.pads) {
+      // Convert old keyCode format to new format if needed
+      const keyCode = this.convertLegacyKeyCode(pad.keyCode);
+      
       // Remap sound index to global range
       const globalSoundIndex = pad.hasSound ? (pageStart + pad.soundIndex) : 0;
       
       // Build key mapping
       const mapping: KeyMapping = {
-        keyCode: pad.keyCode,
+        keyCode: keyCode,
         soundIndex: globalSoundIndex,
         soundName: pad.soundFileName,
         mode: pad.playbackMode,
@@ -259,16 +303,16 @@ export class ProjectIO {
       
       if (pad.hasSound) {
         // Store key-sound association
-        pageManager.setKeySoundIndex(pad.keyCode, globalSoundIndex);
+        pageManager.setKeySoundIndex(keyCode, globalSoundIndex);
         // Store mapping
-        pageManager.setKeyMapping(pad.keyCode, mapping);
+        pageManager.setKeyMapping(keyCode, mapping);
         // Apply to mode manager and audio engine
         modeManager.setMapping(mapping);
       }
       
       // Set page jump target if configured
       if (pad.pageJumpTarget >= 0) {
-        pageManager.setPadPageJump(pad.keyCode, pad.pageJumpTarget);
+        pageManager.setPadPageJump(keyCode, pad.pageJumpTarget);
       }
     }
     
