@@ -7,6 +7,7 @@
 
 import { Command, commandExecutor } from '../edit/commands';
 import { clipboardManager } from '../edit/clipboard';
+import { keyboardHandler } from './keyboard';
 
 // ============================================================================
 // HOTKEY DEFINITIONS
@@ -102,10 +103,13 @@ export class HotkeyHandler {
   private findMatchingHotkey(event: KeyboardEvent): HotkeyDef | null {
     const key = event.key.toLowerCase();
     
+    // Check if this is LEFT shift (not right shift which is a playable pad)
+    const effectiveShift = event.shiftKey && !keyboardHandler.isRightShiftPressed();
+    
     for (const hotkey of HOTKEYS) {
       if (hotkey.key === key &&
           hotkey.ctrl === event.ctrlKey &&
-          hotkey.shift === event.shiftKey &&
+          hotkey.shift === effectiveShift &&
           hotkey.alt === event.altKey) {
         return hotkey;
       }

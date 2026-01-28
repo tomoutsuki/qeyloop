@@ -21,6 +21,9 @@ export class KeyboardHandler {
   /** Whether keyboard input is enabled */
   private enabled = true;
   
+  /** Track if RShift (playable pad) is currently held */
+  private isRightShiftHeld = false;
+  
   /** Callback for key state changes (for UI) */
   private onKeyStateChange: ((keyCode: number, pressed: boolean) => void) | null = null;
   
@@ -58,9 +61,12 @@ export class KeyboardHandler {
     // Check if this key is in our launchpad layout
     if (!this.isLaunchpadKey(keyCode)) return;
     
-    // Ignore if using hotkey modifiers (Shift, Ctrl, Alt, Meta) UNLESS the key being pressed IS the modifier
-    const isModifierKey = keyCode === 16; // ShiftRight
-    if (!isModifierKey && (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)) return;
+    // Ignore if using hotkey modifiers for combinations (but allow RShift itself)
+    // Only block when LEFT shift is pressed (for hotkeys), not RIGHT shift (which is a pad)
+    const isRightShift = event.code === 'ShiftRight';
+    // If shiftKey is true but RShift is held, it's RShift not left shift
+    const isLeftShiftPressed = event.shiftKey && !this.isRightShiftHeld;
+    if (!isRightShift && (isLeftShiftPressed || event.ctrlKey || event.altKey || event.metaKey)) return;
     
     // Prevent key repeat
     if (this.heldKeys.has(keyCode)) return;
@@ -70,6 +76,11 @@ export class KeyboardHandler {
     
     // Mark key as held
     this.heldKeys.add(keyCode);
+    
+    // Track RShift state
+    if (isRightShift) {
+      this.isRightShiftHeld = true;
+    }
     
     // === PAD-TRIGGERED PAGE JUMP ===
     // Check if this pad should trigger a page jump (but don't execute yet)
@@ -103,6 +114,11 @@ export class KeyboardHandler {
     
     // Mark key as released
     this.heldKeys.delete(keyCode);
+    
+    // Track RShift state
+    if (event.code === 'ShiftRight') {
+      this.isRightShiftHeld = false;
+    }
     
     // Release note
     audioEngine.noteOff(keyCode);
@@ -174,6 +190,14 @@ export class KeyboardHandler {
       this.onKeyStateChange?.(keyCode, false);
     }
     this.heldKeys.clear();
+    this.isRightShiftHeld = false;
+  }
+  
+  /**
+   * Check if right shift (playable pad) is currently held
+   */
+  isRightShiftPressed(): boolean {
+    return this.isRightShiftHeld;
   }
   
   /**

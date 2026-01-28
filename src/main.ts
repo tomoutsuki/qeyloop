@@ -160,7 +160,11 @@ const PAGE_HOTKEYS: { [key: string]: number } = {
  * Handle page switching hotkeys (Shift + 1-0)
  */
 function handlePageHotkey(event: KeyboardEvent): boolean {
-  if (!isInitialized || !event.shiftKey) return false;
+  if (!isInitialized) return false;
+  
+  // Only respond to LEFT shift (not right shift which is a playable pad)
+  // If RShift is held, don't trigger page switch
+  if (!event.shiftKey || keyboardHandler.isRightShiftPressed()) return false;
   
   const pageIndex = PAGE_HOTKEYS[event.code];
   if (pageIndex !== undefined) {
