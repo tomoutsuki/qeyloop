@@ -231,6 +231,13 @@ export class PageManager {
     // Reset mode manager to defaults first
     modeManager.initialize();
     
+    // === CRITICAL: Clear all key mappings in audio engine first ===
+    // This prevents keys without sounds from playing sounds from previous page
+    for (const keyCode of getAllKeyCodes()) {
+      const defaultMapping = createDefaultKeyMapping(keyCode);
+      audioEngine.setKeyMapping(defaultMapping);
+    }
+    
     // === CRITICAL: Only load sounds that belong to this page ===
     // Clear and reload sounds to prevent cross-page contamination
     // Each page has its own sound slot range: page N uses slots [N*64, N*64+63]
