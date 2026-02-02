@@ -30,6 +30,9 @@ export const enum Command {
   // Paste (works for both)
   Paste = 'paste',
   
+  // Delete
+  DeleteSound = 'delete_sound',
+  
   // Undo/Redo
   Undo = 'undo',
   Redo = 'redo',
@@ -99,6 +102,8 @@ export class CommandExecutor {
         return this.cutPad();
       case Command.Paste:
         return this.paste();
+      case Command.DeleteSound:
+        return this.deleteSound();
       case Command.Undo:
         return this.undo();
       case Command.Redo:
@@ -534,6 +539,51 @@ export class CommandExecutor {
     input.click();
     
     this.showStatus('Select old .qeyloop file to convert');
+  }
+  
+  // ==========================================================================
+  // DELETE SOUND
+  // ==========================================================================
+  
+  /**
+   * Delete sound from selected pad
+   */
+  private deleteSound(): boolean {
+    if (this.selectedPadKeyCode === null) {
+      this.showStatus('No pad selected');
+      return false;
+    }
+    
+    const keyCode = this.selectedPadKeyCode;
+    const mapping = modeManager.getMapping(keyCode);
+    
+    if (!mapping?.hasSound) {
+      this.showStatus('Selected pad has no sound');
+      return false;
+    }
+    
+    // Record state before delete
+    const beforeState = historyManager.createPadSnapshot(keyCode);
+    
+    // Clear the pad's sound and settings
+    this.clearPad(keyCode);
+    
+    // Record state after delete
+    const afterState = historyManager.createPadSnapshot(keyCode);
+    historyManager.recordAction(
+      HistoryActionType.Clear,
+      `Delete sound from pad`,
+      [keyCode],
+      [beforeState],
+      [afterState]
+    );
+    
+    // Save page state
+    pageManager.saveCurrentPageState();
+    
+    this.onRefreshUI?.();
+    this.showStatus('Sound deleted');
+    return true;
   }
   
   // ==========================================================================

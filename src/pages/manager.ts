@@ -583,11 +583,14 @@ export class PageManager {
       
       // Check if we've exceeded the page's sound slot limit
       if (page.nextSoundIndex >= pageEnd) {
-        console.warn(`Page ${page.index + 1} has reached maximum sound slots (64)`);
-        return pageEnd - 1; // Return last valid index
+        const errorMsg = `Page ${page.index + 1} has reached maximum sound slots (64)`;
+        console.error(errorMsg);
+        throw new Error(errorMsg);
       }
       
-      return page.nextSoundIndex++;
+      const currentIndex = page.nextSoundIndex;
+      page.nextSoundIndex++;
+      return currentIndex;
     }
     return 0;
   }

@@ -33,6 +33,9 @@ const HOTKEYS: HotkeyDef[] = [
   { key: 'c', ctrl: true, shift: true, alt: false, command: Command.CopyPad, description: 'Copy pad (full)' },
   { key: 'x', ctrl: true, shift: true, alt: false, command: Command.CutPad, description: 'Cut pad (full)' },
   
+  // Delete
+  { key: 'delete', ctrl: false, shift: false, alt: false, command: Command.DeleteSound, description: 'Delete sound' },
+  
   // Undo/Redo
   { key: 'z', ctrl: true, shift: false, alt: false, command: Command.Undo, description: 'Undo' },
   { key: 'y', ctrl: true, shift: false, alt: false, command: Command.Redo, description: 'Redo' },

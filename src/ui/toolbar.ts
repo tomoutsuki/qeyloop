@@ -148,6 +148,14 @@ export class Toolbar {
             command: Command.Paste,
             enabled: () => clipboardManager.hasContent() && commandExecutor.getSelectedPad() !== null,
           },
+          { type: 'separator' },
+          { 
+            type: 'item', 
+            label: 'Delete Sound', 
+            shortcut: 'Delete', 
+            command: Command.DeleteSound,
+            enabled: () => commandExecutor.getSelectedPad() !== null,
+          },
         ],
       },
       {

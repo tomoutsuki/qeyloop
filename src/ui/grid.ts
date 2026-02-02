@@ -279,8 +279,15 @@ export class PadGrid {
       
       if (soundIndex === undefined) {
         // Allocate new sound slot for this key on current page
-        soundIndex = pageManager.incrementNextSoundIndex();
-        pageManager.setKeySoundIndex(keyCode, soundIndex);
+        try {
+          soundIndex = pageManager.incrementNextSoundIndex();
+          pageManager.setKeySoundIndex(keyCode, soundIndex);
+        } catch (error) {
+          // Page is full - show error and abort
+          console.error('Cannot add sound:', error);
+          alert(error instanceof Error ? error.message : 'Cannot add sound to this page');
+          return;
+        }
       }
       
       console.log(`handleSoundDrop: assigning sound ${file.name} to keyCode=${keyCode}, soundIndex=${soundIndex}`);
