@@ -105,9 +105,9 @@ body {
   background: #222;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
 }
 
@@ -115,7 +115,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  justify-self: start;
 }
 
 .header-logo-icon {
@@ -130,8 +130,8 @@ body {
   display: flex;
   gap: 8px;
   align-items: center;
-  flex: 1;
   justify-content: center;
+  justify-self: center;
   height: 32px;
 }
 
@@ -268,9 +268,8 @@ body {
   display: flex;
   gap: 4px;
   align-items: center;
-  min-width: 320px;
-  max-width: 320px;
   justify-content: flex-end;
+  justify-self: end;
 }
 
 .page-tab {
@@ -341,7 +340,7 @@ body {
   overflow: hidden;
   padding: 16px;
   gap: 16px;
-  align-items: center;
+  align-items: stretch;
 }
 
 .footer {
@@ -716,6 +715,7 @@ body {
   gap: 4px;
   min-width: 0;
   max-width: 100%;
+  align-self: center;
 }
 
 .pad-row {
@@ -885,8 +885,8 @@ body {
 }
 
 .icon-medium {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
 }
 
 .icon-large {
@@ -920,9 +920,11 @@ body {
   border: 1px solid #333;
   padding: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
+  max-height: 100%;
 }
 
 .control-section {

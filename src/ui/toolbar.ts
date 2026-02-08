@@ -121,7 +121,7 @@ export class Toolbar {
           },
           { 
             type: 'item', 
-            label: 'Copy Pad (Full)', 
+            label: 'Copy Pad', 
             shortcut: 'Ctrl+Shift+C', 
             command: Command.CopyPad,
             enabled: () => commandExecutor.getSelectedPad() !== null,
@@ -136,7 +136,7 @@ export class Toolbar {
           },
           { 
             type: 'item', 
-            label: 'Cut Pad (Full)', 
+            label: 'Cut Pad', 
             shortcut: 'Ctrl+Shift+X', 
             command: Command.CutPad,
             enabled: () => commandExecutor.getSelectedPad() !== null,
@@ -272,7 +272,7 @@ export class Toolbar {
     kofiBtn.href = 'https://ko-fi.com/M4M31SXWYG';
     kofiBtn.target = '_blank';
     kofiBtn.rel = 'noopener noreferrer';
-    kofiBtn.innerHTML = '<img src="/assets/icons/coffee.svg" class="icon icon-small" alt="Coffee" /> Fuel Qeyloop';
+    kofiBtn.innerHTML = '<img src="/assets/icons/coffee.svg" class="icon icon-medium" alt="Coffee" /> Fuel Qeyloop';
     kofiBtn.className = 'toolbar-btn toolbar-kofi';
     kofiBtn.title = 'Support Qeyloop on Ko-fi';
     rightSection.appendChild(kofiBtn);
@@ -312,7 +312,7 @@ export class Toolbar {
       
       // Metronome button
       this.metronomeBtn = document.createElement('button');
-      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-small" alt="Metronome" />';
+      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-medium" alt="Metronome" />';
       this.metronomeBtn.className = 'header-btn';
       this.metronomeBtn.title = 'Toggle Metronome';
       headerTransport.appendChild(this.metronomeBtn);
@@ -335,7 +335,7 @@ export class Toolbar {
       
       // Panic button
       const panicBtn = document.createElement('button');
-      panicBtn.innerHTML = '<img src="/assets/icons/panic.svg" class="icon icon-small" alt="Panic" /> PANIC';
+      panicBtn.innerHTML = '<img src="/assets/icons/panic.svg" class="icon icon-medium" alt="Panic" /> PANIC';
       panicBtn.className = 'header-btn header-panic';
       panicBtn.title = 'Stop all sounds (ESC)';
       headerTransport.appendChild(panicBtn);
@@ -676,10 +676,10 @@ export class Toolbar {
     if (!this.metronomeBtn) return;
     
     if (bpmController.isMetronomeEnabled()) {
-      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-small" alt="Metronome" />';
+      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-medium" alt="Metronome" />';
       this.metronomeBtn.classList.add('active');
     } else {
-      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-small" alt="Metronome" />';
+      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-medium" alt="Metronome" />';
       this.metronomeBtn.classList.remove('active');
     }
   }

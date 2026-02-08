@@ -312,7 +312,7 @@ export class ControlPanel {
     const label = document.createElement('label');
     const icon = document.createElement('img');
     icon.src = '/assets/icons/volume_up.svg';
-    icon.className = 'icon icon-small';
+    icon.className = 'icon icon-medium';
     label.appendChild(icon);
     const text = document.createElement('span');
     text.textContent = 'Volume';
@@ -341,7 +341,7 @@ export class ControlPanel {
     const label = document.createElement('label');
     const icon = document.createElement('img');
     icon.src = '/assets/icons/pitch.svg';
-    icon.className = 'icon icon-small';
+    icon.className = 'icon icon-medium';
     label.appendChild(icon);
     const text = document.createElement('span');
     text.textContent = 'Pitch';
