@@ -40,7 +40,7 @@ export class ControlPanel {
     pitchSlider?: HTMLInputElement;
     metronomeToggle?: HTMLButtonElement;
     modulationSelect?: HTMLSelectElement;
-    overlapSelect?: HTMLSelectElement;
+    overlapSelect?: HTMLButtonElement;
     groupInput?: HTMLInputElement;
     modeToggle?: HTMLButtonElement;
     playbackTypeToggle?: HTMLButtonElement;
@@ -74,24 +74,35 @@ export class ControlPanel {
     this.container.innerHTML = '';
     this.container.className = 'control-panel';
     
-    // Modulation section
+    // 1. Selected Key section
+    const selectedKeySection = this.createSection('Selected Key');
+    selectedKeySection.appendChild(this.createSelectedPadInfo());
+    this.container.appendChild(selectedKeySection);
+    
+    // 2. Load Sound section
+    const loadSoundSection = this.createSection('Load Sound');
+    loadSoundSection.appendChild(this.createSoundUploadControl());
+    this.container.appendChild(loadSoundSection);
+    
+    // 3. General section
+    const generalSection = this.createSection('General');
+    generalSection.appendChild(this.createPadVolumeControl());
+    generalSection.appendChild(this.createPadPitchControl());
+    this.container.appendChild(generalSection);
+    
+    // 4. Misc section
+    const miscSection = this.createSection('Misc');
+    miscSection.appendChild(this.createPadModeControl());
+    miscSection.appendChild(this.createPadPlaybackTypeControl());
+    miscSection.appendChild(this.createPadOverlapControl());
+    miscSection.appendChild(this.createPadPageJumpControl());
+    this.container.appendChild(miscSection);
+    
+    // 5. Modulation section
     const modSection = this.createSection('Modulation');
     modSection.appendChild(this.createModulationPresetControl());
+    modSection.appendChild(this.createPadModulationControl());
     this.container.appendChild(modSection);
-    
-    // Selected pad section
-    const padSection = this.createSection('Selected Pad');
-    padSection.id = 'pad-settings';
-    padSection.appendChild(this.createSelectedPadInfo());
-    padSection.appendChild(this.createPadModeControl());
-    padSection.appendChild(this.createPadPlaybackTypeControl());
-    padSection.appendChild(this.createPadVolumeControl());
-    padSection.appendChild(this.createPadPitchControl());
-    padSection.appendChild(this.createPadModulationControl());
-    padSection.appendChild(this.createPadOverlapControl());
-    padSection.appendChild(this.createPadPageJumpControl());
-    padSection.appendChild(this.createSoundUploadControl());
-    this.container.appendChild(padSection);
   }
   
   /**
@@ -230,18 +241,9 @@ export class ControlPanel {
    */
   private createSelectedPadInfo(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'control-row';
-    
-    const label = document.createElement('span');
-    label.textContent = 'Key: ';
-    container.appendChild(label);
-    
-    const keyLabel = document.createElement('span');
-    keyLabel.textContent = 'None';
-    keyLabel.className = 'selected-key-label';
-    this.elements.selectedKeyLabel = keyLabel;
-    container.appendChild(keyLabel);
-    
+    container.className = 'selected-key-display empty';
+    container.textContent = 'No key selected';
+    this.elements.selectedKeyLabel = container;
     return container;
   }
   
@@ -253,8 +255,19 @@ export class ControlPanel {
     container.className = 'control-row';
     
     const btn = document.createElement('button');
-    btn.textContent = '▶ Single';
     btn.className = 'btn';
+    btn.style.width = '100%';
+    
+    // Icon + text
+    const icon = document.createElement('img');
+    icon.src = '/assets/icons/single.svg';
+    icon.className = 'icon';
+    btn.appendChild(icon);
+    
+    const text = document.createElement('span');
+    text.textContent = 'Single Shot';
+    btn.appendChild(text);
+    
     this.elements.modeToggle = btn;
     container.appendChild(btn);
     
@@ -269,9 +282,20 @@ export class ControlPanel {
     container.className = 'control-row';
     
     const btn = document.createElement('button');
-    btn.textContent = '🔊 One-Shot';
     btn.className = 'btn';
+    btn.style.width = '100%';
     btn.title = 'One-Shot: Audio plays to end regardless of key release';
+    
+    // Icon + text
+    const icon = document.createElement('img');
+    icon.src = '/assets/icons/gate.svg';
+    icon.className = 'icon';
+    btn.appendChild(icon);
+    
+    const text = document.createElement('span');
+    text.textContent = 'One-Shot';
+    btn.appendChild(text);
+    
     this.elements.playbackTypeToggle = btn;
     container.appendChild(btn);
     
@@ -286,7 +310,13 @@ export class ControlPanel {
     container.className = 'control-row';
     
     const label = document.createElement('label');
-    label.textContent = 'Volume';
+    const icon = document.createElement('img');
+    icon.src = '/assets/icons/volume_up.svg';
+    icon.className = 'icon icon-small';
+    label.appendChild(icon);
+    const text = document.createElement('span');
+    text.textContent = 'Volume';
+    label.appendChild(text);
     container.appendChild(label);
     
     const slider = document.createElement('input');
@@ -309,7 +339,13 @@ export class ControlPanel {
     container.className = 'control-row';
     
     const label = document.createElement('label');
-    label.textContent = 'Pitch';
+    const icon = document.createElement('img');
+    icon.src = '/assets/icons/pitch.svg';
+    icon.className = 'icon icon-small';
+    label.appendChild(icon);
+    const text = document.createElement('span');
+    text.textContent = 'Pitch';
+    label.appendChild(text);
     container.appendChild(label);
     
     const slider = document.createElement('input');
@@ -337,8 +373,15 @@ export class ControlPanel {
     container.className = 'control-row';
     
     const btn = document.createElement('button');
-    btn.textContent = '◇ Mod Off';
-    btn.className = 'btn';
+    btn.className = 'btn btn-icon';
+    btn.style.width = '100%';
+    btn.title = 'Toggle Modulation';
+    
+    const icon = document.createElement('img');
+    icon.src = '/assets/icons/modulation_off.svg';
+    icon.className = 'icon icon-medium';
+    btn.appendChild(icon);
+    
     this.elements.modToggle = btn;
     container.appendChild(btn);
     
@@ -356,23 +399,14 @@ export class ControlPanel {
     label.textContent = 'Overlap';
     container.appendChild(label);
     
-    const select = document.createElement('select');
-    select.className = 'select';
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.style.width = '100%';
+    btn.textContent = 'Poly';
+    btn.dataset.mode = OverlapMode.Polyphonic.toString();
     
-    const modes = [
-      { value: OverlapMode.Polyphonic, label: 'Poly' },
-      { value: OverlapMode.Monophonic, label: 'Mono' },
-    ];
-    
-    for (const mode of modes) {
-      const option = document.createElement('option');
-      option.value = mode.value.toString();
-      option.textContent = mode.label;
-      select.appendChild(option);
-    }
-    
-    this.elements.overlapSelect = select;
-    container.appendChild(select);
+    this.elements.overlapSelect = btn;
+    container.appendChild(btn);
     
     // Group ID
     const groupLabel = document.createElement('label');
@@ -432,13 +466,24 @@ export class ControlPanel {
    */
   private createSoundUploadControl(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'control-row';
+    container.className = 'load-sound-container';
     
+    // Load sound button
     const btn = document.createElement('button');
-    btn.textContent = '📁 Load Sound';
-    btn.className = 'btn';
+    btn.className = 'load-sound-btn';
+    
+    const icon = document.createElement('img');
+    icon.src = '/assets/icons/load_sound.svg';
+    icon.className = 'icon';
+    btn.appendChild(icon);
+    
+    const text = document.createElement('span');
+    text.textContent = 'Load Sound';
+    btn.appendChild(text);
+    
     container.appendChild(btn);
     
+    // Hidden file input
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'audio/*';
@@ -629,18 +674,22 @@ export class ControlPanel {
     });
     
     // Overlap select
-    this.elements.overlapSelect?.addEventListener('change', (e) => {
-      if (this.selectedKeyCode !== null) {
-        const mode = parseInt((e.target as HTMLSelectElement).value) as OverlapMode;
+    this.elements.overlapSelect?.addEventListener('click', () => {
+      if (this.selectedKeyCode !== null && this.elements.overlapSelect) {
+        const currentMode = parseInt(this.elements.overlapSelect.dataset.mode || '0') as OverlapMode;
+        const newMode = currentMode === OverlapMode.Polyphonic ? OverlapMode.Monophonic : OverlapMode.Polyphonic;
+        this.elements.overlapSelect.dataset.mode = newMode.toString();
+        this.elements.overlapSelect.textContent = newMode === OverlapMode.Polyphonic ? 'Poly' : 'Mono';
+        
         const groupId = parseInt(this.elements.groupInput?.value || '0');
-        modeManager.setKeyOverlap(this.selectedKeyCode, mode, groupId);
+        modeManager.setKeyOverlap(this.selectedKeyCode, newMode, groupId);
       }
     });
     
     // Group input
     this.elements.groupInput?.addEventListener('change', (e) => {
       if (this.selectedKeyCode !== null) {
-        const mode = parseInt(this.elements.overlapSelect?.value || '0') as OverlapMode;
+        const mode = parseInt(this.elements.overlapSelect?.dataset.mode || '0') as OverlapMode;
         const groupId = parseInt((e.target as HTMLInputElement).value);
         modeManager.setKeyOverlap(this.selectedKeyCode, mode, groupId);
       }
@@ -697,10 +746,45 @@ export class ControlPanel {
     const mapping = modeManager.getMapping(keyCode);
     if (!mapping) return;
     
-    // Update key label
+    // Update key label - show single character
     const keyName = Object.entries(KEY_CODES).find(([, code]) => code === keyCode)?.[0] || '?';
     if (this.elements.selectedKeyLabel) {
-      this.elements.selectedKeyLabel.textContent = keyName;
+      // Remove "empty" class and show just the key character (first char of key name)
+      this.elements.selectedKeyLabel.classList.remove('empty');
+      // Get the actual key character (e.g., "Q" from "KeyQ", "1" from "Digit1")
+      let displayChar = keyName;
+      if (keyName.startsWith('Key')) {
+        displayChar = keyName.replace('Key', '');
+      } else if (keyName.startsWith('Digit')) {
+        displayChar = keyName.replace('Digit', '');
+      } else if (keyName === 'Backquote') {
+        displayChar = '`';
+      } else if (keyName === 'Minus') {
+        displayChar = '-';
+      } else if (keyName === 'Equal') {
+        displayChar = '=';
+      } else if (keyName === 'BracketLeft') {
+        displayChar = '[';
+      } else if (keyName === 'BracketRight') {
+        displayChar = ']';
+      } else if (keyName === 'Backslash') {
+        displayChar = '\\\\';
+      } else if (keyName === 'Semicolon') {
+        displayChar = ';';
+      } else if (keyName === 'Quote') {
+        displayChar = "'";
+      } else if (keyName === 'Comma') {
+        displayChar = ',';
+      } else if (keyName === 'Period') {
+        displayChar = '.';
+      } else if (keyName === 'Slash') {
+        displayChar = '/';
+      } else if (keyName === 'Enter') {
+        displayChar = '⏎';
+      } else if (keyName === 'ShiftRight') {
+        displayChar = '⇧';
+      }
+      this.elements.selectedKeyLabel.textContent = displayChar;
     }
     
     // Update controls
@@ -721,7 +805,8 @@ export class ControlPanel {
     }
     
     if (this.elements.overlapSelect) {
-      this.elements.overlapSelect.value = mapping.overlapMode.toString();
+      this.elements.overlapSelect.dataset.mode = mapping.overlapMode.toString();
+      this.elements.overlapSelect.textContent = mapping.overlapMode === OverlapMode.Polyphonic ? 'Poly' : 'Mono';
     }
     
     if (this.elements.groupInput) {
@@ -749,7 +834,8 @@ export class ControlPanel {
    */
   private updateMetronomeDisplay(enabled: boolean): void {
     if (this.elements.metronomeToggle) {
-      this.elements.metronomeToggle.textContent = enabled ? '🔊 Metro' : '🔇 Metro';
+      const icon = enabled ? 'volume_up.svg' : 'volume_mute.svg';
+      this.elements.metronomeToggle.innerHTML = `<img src="/assets/icons/${icon}" class="icon icon-small" alt="${enabled ? 'Metro On' : 'Metro Off'}" /> Metro`;
       this.elements.metronomeToggle.classList.toggle('active', enabled);
     }
   }
@@ -759,7 +845,9 @@ export class ControlPanel {
    */
   private updateModeDisplay(mode: PlaybackMode): void {
     if (this.elements.modeToggle) {
-      this.elements.modeToggle.textContent = mode === PlaybackMode.Loop ? '↻ Loop' : '▶ Single';
+      const icon = mode === PlaybackMode.Loop ? 'loop.svg' : 'single.svg';
+      const label = mode === PlaybackMode.Loop ? 'Loop' : 'Single';
+      this.elements.modeToggle.innerHTML = `<img src="/assets/icons/${icon}" class="icon icon-small" alt="${label}" /> ${label}`;
       this.elements.modeToggle.classList.toggle('loop', mode === PlaybackMode.Loop);
     }
   }
@@ -770,10 +858,10 @@ export class ControlPanel {
   private updatePlaybackTypeDisplay(playbackType: PlaybackType): void {
     if (this.elements.playbackTypeToggle) {
       if (playbackType === PlaybackType.Gate) {
-        this.elements.playbackTypeToggle.textContent = '🎹 Gate';
+        this.elements.playbackTypeToggle.innerHTML = '<img src="/assets/icons/gate.svg" class="icon icon-small" alt="Gate" /> Gate';
         this.elements.playbackTypeToggle.title = 'Gate: Audio plays only while key is held';
       } else {
-        this.elements.playbackTypeToggle.textContent = '🔊 One-Shot';
+        this.elements.playbackTypeToggle.innerHTML = '<img src="/assets/icons/single.svg" class="icon icon-small" alt="One-Shot" /> One-Shot';
         this.elements.playbackTypeToggle.title = 'One-Shot: Audio plays to end regardless of key release';
       }
       this.elements.playbackTypeToggle.classList.toggle('gate', playbackType === PlaybackType.Gate);
@@ -785,7 +873,9 @@ export class ControlPanel {
    */
   private updateModDisplay(enabled: boolean): void {
     if (this.elements.modToggle) {
-      this.elements.modToggle.textContent = enabled ? '◈ Mod On' : '◇ Mod Off';
+      const icon = enabled ? 'modulation_on.svg' : 'modulation_off.svg';
+      const label = enabled ? 'ON' : 'OFF';
+      this.elements.modToggle.innerHTML = `<img src="/assets/icons/${icon}" class="icon icon-small" alt="Mod ${label}" /> ${label}`;
       this.elements.modToggle.classList.toggle('active', enabled);
     }
   }

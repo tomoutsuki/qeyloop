@@ -18,12 +18,13 @@ import { layoutManager, KeyboardLayoutPreset } from '../input/layouts';
 // ============================================================================
 
 interface MenuItem {
-  type: 'item' | 'separator';
+  type: 'item' | 'separator' | 'submenu';
   label?: string;
   shortcut?: string;
   command?: Command;
   enabled?: () => boolean;
   action?: () => void;
+  items?: MenuItem[];
 }
 
 interface Menu {
@@ -84,11 +85,11 @@ export class Toolbar {
       {
         label: 'File',
         items: [
-          { type: 'item', label: 'Import Page...', shortcut: 'Ctrl+Shift+O', command: Command.ImportPage },
-          { type: 'item', label: 'Import Project...', shortcut: 'Ctrl+O', command: Command.ImportProject },
-          { type: 'separator' },
           { type: 'item', label: 'Export Page...', shortcut: 'Ctrl+Shift+S', command: Command.ExportPage },
           { type: 'item', label: 'Export Project...', shortcut: 'Ctrl+S', command: Command.ExportProject },
+          { type: 'separator' },
+          { type: 'item', label: 'Import Page...', shortcut: 'Ctrl+Shift+O', command: Command.ImportPage },
+          { type: 'item', label: 'Import Project...', shortcut: 'Ctrl+O', command: Command.ImportProject },
           { type: 'separator' },
           { type: 'item', label: 'Convert Old .qeyloop...', command: Command.ConvertOldProject },
         ],
@@ -159,27 +160,40 @@ export class Toolbar {
         ],
       },
       {
-        label: 'Layout',
+        label: 'View',
         items: [
-          { 
-            type: 'item', 
-            label: '✓ QWERTY', 
-            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.QWERTY),
+          {
+            type: 'submenu',
+            label: 'Layout ▸',
+            items: [
+              { 
+                type: 'item', 
+                label: '✓ QWERTY', 
+                action: () => this.setKeyboardLayout(KeyboardLayoutPreset.QWERTY),
+              },
+              { 
+                type: 'item', 
+                label: 'AZERTY', 
+                action: () => this.setKeyboardLayout(KeyboardLayoutPreset.AZERTY),
+              },
+              { 
+                type: 'item', 
+                label: 'QWERTZ', 
+                action: () => this.setKeyboardLayout(KeyboardLayoutPreset.QWERTZ),
+              },
+              { 
+                type: 'item', 
+                label: 'ABNT2', 
+                action: () => this.setKeyboardLayout(KeyboardLayoutPreset.ABNT2),
+              },
+            ],
           },
+          { type: 'separator' },
           { 
-            type: 'item', 
-            label: 'AZERTY', 
-            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.AZERTY),
-          },
-          { 
-            type: 'item', 
-            label: 'QWERTZ', 
-            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.QWERTZ),
-          },
-          { 
-            type: 'item', 
-            label: 'ABNT2', 
-            action: () => this.setKeyboardLayout(KeyboardLayoutPreset.ABNT2),
+            type: 'item',
+            label: 'Theme: Coming soon',
+            enabled: () => false,
+            action: () => {},
           },
         ],
       },
@@ -258,7 +272,7 @@ export class Toolbar {
     kofiBtn.href = 'https://ko-fi.com/M4M31SXWYG';
     kofiBtn.target = '_blank';
     kofiBtn.rel = 'noopener noreferrer';
-    kofiBtn.textContent = '☕ Fuel Qeyloop';
+    kofiBtn.innerHTML = '<img src="/assets/icons/coffee.svg" class="icon icon-small" alt="Coffee" /> Fuel Qeyloop';
     kofiBtn.className = 'toolbar-btn toolbar-kofi';
     kofiBtn.title = 'Support Qeyloop on Ko-fi';
     rightSection.appendChild(kofiBtn);
@@ -298,14 +312,15 @@ export class Toolbar {
       
       // Metronome button
       this.metronomeBtn = document.createElement('button');
-      this.metronomeBtn.textContent = '🔇';
+      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-small" alt="Metronome" />';
       this.metronomeBtn.className = 'header-btn';
       this.metronomeBtn.title = 'Toggle Metronome';
       headerTransport.appendChild(this.metronomeBtn);
       
       // Master volume
       const volumeLabel = document.createElement('span');
-      volumeLabel.textContent = '🔊';
+      volumeLabel.id = 'volume-icon-label';
+      volumeLabel.innerHTML = '<img src="/assets/icons/volume_up.svg" class="icon icon-small" alt="Volume" />';
       volumeLabel.className = 'header-label';
       headerTransport.appendChild(volumeLabel);
       
@@ -320,7 +335,7 @@ export class Toolbar {
       
       // Panic button
       const panicBtn = document.createElement('button');
-      panicBtn.textContent = '⚠️ PANIC';
+      panicBtn.innerHTML = '<img src="/assets/icons/panic.svg" class="icon icon-small" alt="Panic" /> PANIC';
       panicBtn.className = 'header-btn header-panic';
       panicBtn.title = 'Stop all sounds (ESC)';
       headerTransport.appendChild(panicBtn);
@@ -355,12 +370,30 @@ export class Toolbar {
       this.masterVolumeSlider.addEventListener('input', (e) => {
         const value = parseInt((e.target as HTMLInputElement).value) / 100;
         audioEngine.setMasterVolume(value);
+        this.updateVolumeIcon(parseInt((e.target as HTMLInputElement).value));
       });
       
       panicBtn.addEventListener('click', () => {
         audioEngine.panic();
       });
     }
+  }
+  
+  /**
+   * Update volume icon based on volume level
+   */
+  private updateVolumeIcon(volume: number): void {
+    const volumeLabel = document.getElementById('volume-icon-label');
+    if (!volumeLabel) return;
+    
+    let icon = 'volume_mute.svg';
+    if (volume > 50) {
+      icon = 'volume_up.svg';
+    } else if (volume > 0) {
+      icon = 'volume_low.svg';
+    }
+    
+    volumeLabel.innerHTML = `<img src="/assets/icons/${icon}" class="icon icon-small" alt="Volume" />`;
   }
   
   /**
@@ -417,6 +450,31 @@ export class Toolbar {
       const sep = document.createElement('div');
       sep.className = 'menu-separator';
       return sep;
+    }
+    
+    if (item.type === 'submenu') {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'menu-item menu-submenu';
+      
+      // Label
+      const label = document.createElement('span');
+      label.className = 'menu-item-label';
+      label.textContent = item.label ?? '';
+      itemEl.appendChild(label);
+      
+      // Submenu dropdown
+      const submenu = document.createElement('div');
+      submenu.className = 'menu-submenu-dropdown';
+      
+      if (item.items) {
+        for (const subItem of item.items) {
+          const subItemEl = this.createMenuItem(subItem);
+          submenu.appendChild(subItemEl);
+        }
+      }
+      
+      itemEl.appendChild(submenu);
+      return itemEl;
     }
     
     const itemEl = document.createElement('button');
@@ -578,13 +636,17 @@ export class Toolbar {
     layoutManager.setLayout(preset);
     
     // Update menu labels to show checkmark on active layout
-    const layoutMenu = this.menus.find(m => m.label === 'Layout');
-    if (layoutMenu) {
-      for (const item of layoutMenu.items) {
-        if (item.type === 'item' && item.label) {
-          const cleanLabel = item.label.replace(/^✓ /, '');
-          const presetMatch = cleanLabel.toLowerCase() === preset;
-          item.label = presetMatch ? `✓ ${cleanLabel}` : cleanLabel;
+    const viewMenu = this.menus.find(m => m.label === 'View');
+    if (viewMenu) {
+      // Find the Layout submenu
+      const layoutSubmenu = viewMenu.items.find(item => item.type === 'submenu' && item.label?.includes('Layout'));
+      if (layoutSubmenu && layoutSubmenu.items) {
+        for (const item of layoutSubmenu.items) {
+          if (item.type === 'item' && item.label) {
+            const cleanLabel = item.label.replace(/^✓ /, '');
+            const presetMatch = cleanLabel.toLowerCase() === preset;
+            item.label = presetMatch ? `✓ ${cleanLabel}` : cleanLabel;
+          }
         }
       }
     }
@@ -614,10 +676,10 @@ export class Toolbar {
     if (!this.metronomeBtn) return;
     
     if (bpmController.isMetronomeEnabled()) {
-      this.metronomeBtn.textContent = '🔔';
+      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-small" alt="Metronome" />';
       this.metronomeBtn.classList.add('active');
     } else {
-      this.metronomeBtn.textContent = '🔇';
+      this.metronomeBtn.innerHTML = '<img src="/assets/icons/metronome.svg" class="icon icon-small" alt="Metronome" />';
       this.metronomeBtn.classList.remove('active');
     }
   }

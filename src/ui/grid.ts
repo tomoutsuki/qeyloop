@@ -78,10 +78,23 @@ export class PadGrid {
     this.container.className = 'pad-grid';
     
     const allRows = [PHYSICAL_KEYS.row1, PHYSICAL_KEYS.row2, PHYSICAL_KEYS.row3, PHYSICAL_KEYS.row4];
+    const placeholderLabels = ['', 'Tab', 'Caps', 'Shift'];
     
-    for (const row of allRows) {
+    for (let i = 0; i < allRows.length; i++) {
+      const row = allRows[i];
       const rowEl = document.createElement('div');
       rowEl.className = 'pad-row';
+      
+      // Add placeholder key for rows 2-4 (Tab, Caps Lock, Shift)
+      if (i > 0) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'pad pad-placeholder';
+        const labelEl = document.createElement('div');
+        labelEl.className = 'pad-label';
+        labelEl.textContent = placeholderLabels[i];
+        placeholder.appendChild(labelEl);
+        rowEl.appendChild(placeholder);
+      }
       
       for (const code of row) {
         // Get key code and label from layout manager
@@ -325,11 +338,11 @@ export class PadGrid {
     const modeEl = pad.querySelector('.pad-mode') as HTMLElement;
     if (modeEl) {
       if (mapping.hasSound) {
-        const modeSymbol = mapping.mode === PlaybackMode.Loop ? '↻' : '▶';
-        const modSymbol = mapping.modulationEnabled ? '◈' : '';
-        modeEl.textContent = modeSymbol + modSymbol;
+        const modeIcon = mapping.mode === PlaybackMode.Loop ? 'loop.svg' : 'single.svg';
+        const modIcon = mapping.modulationEnabled ? '<img src="/assets/icons/modulation_on.svg" class="icon icon-small" alt="Mod" />' : '';
+        modeEl.innerHTML = `<img src="/assets/icons/${modeIcon}" class="icon icon-small" alt="${mapping.mode === PlaybackMode.Loop ? 'Loop' : 'Single'}" />${modIcon}`;
       } else {
-        modeEl.textContent = '';
+        modeEl.innerHTML = '';
       }
     }
     
