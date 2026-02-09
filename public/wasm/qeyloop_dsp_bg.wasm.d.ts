@@ -1,0 +1,36 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const __wbg_dspengine_free: (a: number, b: number) => void;
+export const dspengine_get_active_voice_count: (a: number) => number;
+export const dspengine_get_bpm: (a: number) => number;
+export const dspengine_get_key_group_id: (a: number, b: number) => number;
+export const dspengine_get_key_has_sound: (a: number, b: number) => number;
+export const dspengine_get_key_mode: (a: number, b: number) => number;
+export const dspengine_get_key_modulation: (a: number, b: number) => number;
+export const dspengine_get_key_overlap_mode: (a: number, b: number) => number;
+export const dspengine_get_key_pitch: (a: number, b: number) => number;
+export const dspengine_get_key_sound_index: (a: number, b: number) => number;
+export const dspengine_get_key_volume: (a: number, b: number) => number;
+export const dspengine_is_key_playing: (a: number, b: number) => number;
+export const dspengine_load_sound: (a: number, b: number, c: number, d: number) => void;
+export const dspengine_new: (a: number) => number;
+export const dspengine_note_off: (a: number, b: number) => void;
+export const dspengine_note_on: (a: number, b: number) => void;
+export const dspengine_panic: (a: number) => void;
+export const dspengine_process: (a: number, b: number, c: number, d: any) => void;
+export const dspengine_reset_timing: (a: number) => void;
+export const dspengine_set_bpm: (a: number, b: number) => void;
+export const dspengine_set_key_mapping: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
+export const dspengine_set_key_mode: (a: number, b: number, c: number) => void;
+export const dspengine_set_key_modulation: (a: number, b: number, c: number) => void;
+export const dspengine_set_key_overlap: (a: number, b: number, c: number, d: number) => void;
+export const dspengine_set_key_pitch: (a: number, b: number, c: number) => void;
+export const dspengine_set_key_volume: (a: number, b: number, c: number) => void;
+export const dspengine_set_master_volume: (a: number, b: number) => void;
+export const dspengine_set_metronome: (a: number, b: number, c: number) => void;
+export const dspengine_set_modulation_preset: (a: number, b: number) => void;
+export const dspengine_unload_sound: (a: number, b: number) => void;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __wbindgen_start: () => void;

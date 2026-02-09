@@ -1,0 +1,16 @@
+{
+  "name": "qeyloop-dsp",
+  "type": "module",
+  "description": "Low-latency DSP engine for Qeyloop launchpad",
+  "version": "1.0.0",
+  "files": [
+    "qeyloop_dsp_bg.wasm",
+    "qeyloop_dsp.js",
+    "qeyloop_dsp.d.ts"
+  ],
+  "main": "qeyloop_dsp.js",
+  "types": "qeyloop_dsp.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

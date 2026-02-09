@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # Experimental Directory
 .experiments/
+
+# Rust build artifacts
+src/wasm/target/
+src/wasm/Cargo.lock
